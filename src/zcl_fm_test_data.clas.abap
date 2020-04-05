@@ -6,33 +6,47 @@ CLASS zcl_fm_test_data DEFINITION
   PUBLIC SECTION.
 
     TYPES: BEGIN OF ty_datadir_entry,
-             dataid    TYPE eufunc-nummer,    "Schlüsselnr. für Testdatenimp.
-             stepid(3),                    "PBO/PAI-Eintrag
-             seqid     TYPE eufunc-seqid,
-             datum     TYPE sy-datum,
-             uzeit     TYPE sy-uzeit,
-             title(40),
+             dataid TYPE eufunc-nummer,    "Schlüsselnr. für Testdatenimp.
+             "! <ul>
+             "! <li>PBO: Test data contains only parameter values before call</li>
+             "! <li>PAI: Test data contains parameter values before and after call</li>
+             "! </ul>
+             stepid TYPE c LENGTH 3,
+             "! <ul>
+             "! <li>' ': Not a test sequence</li>
+             "! <li>'S': Test sequence (not supported by ZCL_FM_TEST_DATA)</li>
+             "! </ul>
+             seqid  TYPE eufunc-seqid,
+             datum  TYPE sy-datum,
+             uzeit  TYPE sy-uzeit,
+             title  TYPE c LENGTH 40,
            END OF ty_datadir_entry,
            ty_datadir TYPE STANDARD TABLE OF ty_datadir_entry WITH EMPTY KEY,
 
            BEGIN OF ty_fdesc_entry,
-             name(30),                     "Field name
-             table(40),                    "Table name
-             type(1),                      "Data type
-             length(5),                    "Length
-             ilength(5),                   "Input length
-             hlength    TYPE p LENGTH 8 DECIMALS 0, "Input length
+             "! Field name
+             name    TYPE c LENGTH 30,
+             "! Table name
+             table   TYPE c LENGTH 40,
+             "! Data type
+             type    TYPE c LENGTH 1,
+             "! Length
+             length  TYPE c LENGTH 5,
+             "! Input length
+             ilength TYPE c LENGTH 5,
+             "! Input length
+             hlength TYPE p LENGTH 8 DECIMALS 0,
              "! Parameter type<ul>
-             "! <li>I IMPORT</li>
-             "! <li>E EXPORT</li>
-             "! <li>C CHANGING </li>
-             "! <li>S STRUCTURE</li>
-             "! <li>Y TYPE</li>
-             "! <li>T TABLE</li>
+             "! <li>I: IMPORT</li>
+             "! <li>E: EXPORT</li>
+             "! <li>C: CHANGING </li>
+             "! <li>S: STRUCTURE</li>
+             "! <li>Y: TYPE</li>
+             "! <li>T: TABLE</li>
              "! </ul>
-             ftype(3),
+             ftype   TYPE c LENGTH 3,
              "! Reference, wessen Struktur
-             number     TYPE i,
+             number  TYPE i,
            END OF ty_fdesc_entry,
            ty_fdesc TYPE STANDARD TABLE OF ty_fdesc_entry WITH EMPTY KEY,
 
@@ -50,7 +64,7 @@ CLASS zcl_fm_test_data DEFINITION
              zeit           TYPE t,
              "! Version
              version        TYPE c LENGTH 4,
-             "! Duration (TIME1)
+             "! Duration in microseconds (TIME1)
              duration       TYPE p LENGTH 8 DECIMALS 0,
              "! Return code (V_RC)
              rc             TYPE i,
@@ -60,6 +74,13 @@ CLASS zcl_fm_test_data DEFINITION
              lower_case     TYPE c LENGTH 1,
            END OF ty_test_attr.
 
+    "! <p class="shorttext synchronized" lang="en"></p>
+    "!
+    "! @parameter fm_name | <p class="shorttext synchronized" lang="en">Name of function module</p>
+    "! @parameter title | <p class="shorttext synchronized" lang="en">Title of test data</p>
+    "! @parameter param_bindings | <p class="shorttext synchronized" lang="en"></p>
+    "! @parameter lower_case | <p class="shorttext synchronized" lang="en"></p>
+    "! @parameter test_id | <p class="shorttext synchronized" lang="en">ID of the test data created</p>
     CLASS-METHODS create_without_execution
       IMPORTING
         fm_name        TYPE tfdir-funcname
@@ -67,8 +88,17 @@ CLASS zcl_fm_test_data DEFINITION
         param_bindings TYPE abap_func_parmbind_tab
         lower_case     TYPE abap_bool OPTIONAL
       RETURNING
-        VALUE(test_id) TYPE eufunc-nummer.
+        VALUE(test_id) TYPE eufunc-nummer
+      RAISING
+        zcx_fm_test_data.
 
+    "! <p class="shorttext synchronized" lang="en"></p>
+    "!
+    "! @parameter fm_name | <p class="shorttext synchronized" lang="en">Name of function module</p>
+    "! @parameter title | <p class="shorttext synchronized" lang="en">Title of test data</p>
+    "! @parameter param_bindings | <p class="shorttext synchronized" lang="en"></p>
+    "! @parameter lower_case | <p class="shorttext synchronized" lang="en"></p>
+    "! @parameter test_id | <p class="shorttext synchronized" lang="en">ID of the test data created</p>
     CLASS-METHODS execute_and_create
       IMPORTING
         fm_name        TYPE tfdir-funcname
@@ -76,8 +106,20 @@ CLASS zcl_fm_test_data DEFINITION
         param_bindings TYPE abap_func_parmbind_tab
         lower_case     TYPE abap_bool OPTIONAL
       RETURNING
-        VALUE(test_id) TYPE eufunc-nummer.
+        VALUE(test_id) TYPE eufunc-nummer
+      RAISING
+        zcx_fm_test_data.
 
+    "! <p class="shorttext synchronized" lang="en"></p>
+    "!
+    "! @parameter fm_name | <p class="shorttext synchronized" lang="en">Name of function module</p>
+    "! @parameter test_id | <p class="shorttext synchronized" lang="en">ID of the test data</p>
+    "! @parameter datadir_entry | <p class="shorttext synchronized" lang="en"></p>
+    "! @parameter attributes | <p class="shorttext synchronized" lang="en"></p>
+    "! @parameter param_bindings_pbo | <p class="shorttext synchronized" lang="en"></p>
+    "!      | Values of arguments passed to the function module (call)
+    "! @parameter param_bindings_pai | <p class="shorttext synchronized" lang="en"></p>
+    "!      | Values of parameters returned after the function module call
     CLASS-METHODS load
       IMPORTING
         fm_name            TYPE tfdir-funcname
@@ -86,9 +128,15 @@ CLASS zcl_fm_test_data DEFINITION
         datadir_entry      TYPE ty_datadir_entry
         attributes         TYPE ty_test_attr
       CHANGING
-        param_bindings_pbo TYPE abap_func_parmbind_tab
-        param_bindings_pai TYPE abap_func_parmbind_tab.
+        param_bindings_pbo TYPE abap_func_parmbind_tab OPTIONAL
+        param_bindings_pai TYPE abap_func_parmbind_tab OPTIONAL
+      RAISING
+        zcx_fm_test_data.
 
+    "! <p class="shorttext synchronized" lang="en"></p>
+    "!
+    "! @parameter fm_name | <p class="shorttext synchronized" lang="en">Name of function module</p>
+    "! @parameter test_id | <p class="shorttext synchronized" lang="en"></p>
     CLASS-METHODS delete
       IMPORTING
         fm_name TYPE tfdir-funcname
@@ -105,14 +153,14 @@ CLASS zcl_fm_test_data DEFINITION
              g_no_save             TYPE c LENGTH 1,
              d102_fname            TYPE rs38l_fnam,
            END OF ty_context,
-           BEGIN OF ty_us_rtti,
-             value  TYPE REF TO data,
-             kind   TYPE i,
-             pname  TYPE string,
-             name   TYPE string,
-             o_rtti TYPE REF TO cl_abap_datadescr,
-           END OF ty_us_rtti,
-           ty_ut_rtti TYPE STANDARD TABLE OF ty_us_rtti WITH DEFAULT KEY.
+           BEGIN OF ty_us_rtts,
+             value TYPE REF TO data,
+**             kind   TYPE i,
+**             pname  TYPE string,
+             name  TYPE string,
+*             o_rtts TYPE REF TO cl_abap_datadescr,
+           END OF ty_us_rtts,
+           ty_ut_rtts TYPE STANDARD TABLE OF ty_us_rtts WITH DEFAULT KEY.
 
     CLASS-METHODS load_test_context
       IMPORTING
@@ -162,21 +210,90 @@ CLASS zcl_fm_test_data DEFINITION
         stepid             TYPE ty_datadir_entry-stepid
         new_param_bindings TYPE abap_func_parmbind_tab
         param_bindings_pbo TYPE abap_func_parmbind_tab
-        attributes         TYPE ty_test_attr.
+        attributes         TYPE ty_test_attr
+      RAISING
+        zcx_fm_test_data.
 
     CLASS-METHODS complete_param_bindings
       IMPORTING
         fm_name            TYPE tfdir-funcname
+        stepid             TYPE ty_datadir_entry-stepid
         param_bindings     TYPE abap_func_parmbind_tab
       EXPORTING
         new_param_bindings TYPE abap_func_parmbind_tab
-        param_bindings_pbo TYPE abap_func_parmbind_tab.
+        param_bindings_pbo TYPE abap_func_parmbind_tab
+      RAISING
+        zcx_fm_test_data.
 
-    CLASS-DATA: params_rtti TYPE ty_ut_rtti.
+    CLASS-DATA: params_rtts TYPE ty_ut_rtts."zcl_fm_params_rtts=>ty_params_rtts.
 
 ENDCLASS.
 
+
+
 CLASS zcl_fm_test_data IMPLEMENTATION.
+
+
+  METHOD complete_param_bindings.
+
+    DATA: ref_parameter     TYPE REF TO data,
+          ref_parameter_pbo TYPE REF TO data.
+
+    TRY.
+        DATA(params_rtts) = zcl_fm_params_rtts=>get( funcname = fm_name ).
+      CATCH zcx_fm_params_rtts.
+        RAISE EXCEPTION TYPE zcx_fm_test_data.
+    ENDTRY.
+
+    new_param_bindings = VALUE #( ).
+    param_bindings_pbo = VALUE #( ).
+    LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
+      CREATE DATA ref_parameter TYPE HANDLE param_rtts->type.
+      new_param_bindings = VALUE #( BASE new_param_bindings
+          ( name  = param_rtts->name
+            kind  = param_rtts->call_function_kind
+            value = ref_parameter ) ).
+      IF param_rtts->call_function_kind <> abap_func_importing.
+        ASSIGN param_bindings[ name = param_rtts->name ] TO FIELD-SYMBOL(<param_binding>).
+        IF sy-subrc = 0.
+          IF stepid = 'PAI'.
+            ASSIGN <param_binding>-value->* TO FIELD-SYMBOL(<input_parameter>).
+            ASSIGN ref_parameter->* TO FIELD-SYMBOL(<parameter_value>).
+            <parameter_value> = <input_parameter>.
+          ENDIF.
+          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
+                ( name = param_rtts->name value = <param_binding>-value ) ).
+        ELSE.
+          CREATE DATA ref_parameter_pbo TYPE HANDLE param_rtts->type.
+          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
+                ( name = param_rtts->name value = ref_parameter_pbo ) ).
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD create_without_execution.
+
+    complete_param_bindings(
+      EXPORTING
+        fm_name            = fm_name
+        stepid             = 'PBO'
+        param_bindings     = param_bindings
+      IMPORTING
+        new_param_bindings = DATA(new_param_bindings)
+        param_bindings_pbo = DATA(param_bindings_pbo) ).
+
+    save( fm_name            = fm_name
+          title              = title
+          stepid             = 'PBO'
+          new_param_bindings = new_param_bindings
+          param_bindings_pbo = param_bindings_pbo
+          attributes         = VALUE #( lower_case = lower_case ) ).
+
+  ENDMETHOD.
+
 
   METHOD delete.
 
@@ -193,183 +310,6 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 
   ENDMETHOD.
 
-  METHOD load_test_context.
-
-    DATA(fugr_name) = get_fugr_name( fm_name ).
-
-    DATA(d102n_exportkey) = VALUE functdir(
-        area   = fugr_name
-        progid = fm_name
-        dataid = '999'
-        seqid  = ' ' ).
-
-    IMPORT  te_datadir            TO context-te_datadir
-            fdesc_copy            TO context-fdesc_copy
-            struc_info_table_copy TO context-struc_info_table_copy
-            g_no_save             TO context-g_no_save
-            d102_fname            TO context-d102_fname
-        FROM DATABASE eufunc(fl)
-        ID d102n_exportkey.
-
-    IF sy-subrc <> 0.
-      " FDESC is initialized by subroutine IN_DESCRIBE_INTERFACE in SAPLSEUJ, for
-      " all parameters and exceptions.
-      " The list of parameters are initially retrieved via function module FUNCTION_IMPORT_DOKU.
-      DATA(fdesc) = VALUE ty_fdesc( ).
-      " STRUC_INFO_TABLE is initialized by subroutine IN_DESCRIBE_INTERFACE in SAPLSEUJ,
-      " by calling the function module RS_COMPLEX_OBJECT_TYPEINFO_GET for all parameters
-      " except EXPORTING parameters.
-      context-struc_info_table_copy = VALUE #( ).
-      in_describe_interface(
-        EXPORTING
-          p_fname               = fm_name
-        IMPORTING
-          struc_info_table_copy = context-struc_info_table_copy
-          fdesc2                = fdesc ).
-      context-fdesc_copy = fdesc.
-      " G_NO_SAVE = ' ' if test data is possible, = 'X' if test data is not possible.
-      context-g_no_save = ' '.
-      " D102_FNAME
-      context-d102_fname = fm_name.
-    ENDIF.
-
-  ENDMETHOD.
-
-  METHOD save_test_context.
-
-    DATA(fugr_name) = get_fugr_name( fm_name ).
-
-    DATA(d102n_exportkey) = VALUE functdir(
-        area   = fugr_name
-        progid = fm_name
-        dataid = '999'
-        seqid  = ' ' ).
-
-    EXPORT
-        te_datadir            FROM context-te_datadir
-        fdesc_copy            FROM context-fdesc_copy
-        struc_info_table_copy FROM context-struc_info_table_copy
-        g_no_save             FROM context-g_no_save
-        d102_fname            FROM context-d102_fname
-      TO DATABASE eufunc(fl)
-      ID d102n_exportkey.
-
-  ENDMETHOD.
-
-  METHOD load.
-
-    DATA: parameter_name TYPE string,
-          cpar           TYPE REF TO cpar.
-
-    DATA(fugr_name) = get_fugr_name( fm_name ).
-
-    DATA(eufunc) = VALUE eufunc(
-        relid   = 'FL'
-        gruppe  = fugr_name
-        name    = fm_name
-        nummer  = test_id ).
-
-    zcl_expimp_table=>import_all(
-      EXPORTING
-        export_import_table_name = 'EUFUNC'
-        area                     = 'FL'
-      IMPORTING
-        tab_cpar                 = DATA(tab_cpar)
-      CHANGING
-        id_wa                    = eufunc ).
-
-    attributes = VALUE ty_test_attr(
-            author  = eufunc-autor
-            datum   = eufunc-datum
-            zeit    = eufunc-zeit
-            version = eufunc-version ).
-
-    FIELD-SYMBOLS <cpar> TYPE cpar.
-    ASSIGN tab_cpar[ name = 'TIME1' ] TO <cpar>.
-    ASSIGN <cpar>-dref->* TO FIELD-SYMBOL(<time1>).
-    ASSIGN tab_cpar[ name = 'V_RC' ] TO <cpar>.
-    ASSIGN <cpar>-dref->* TO FIELD-SYMBOL(<v_rc>).
-    ASSIGN tab_cpar[ name = 'VEXCEPTION' ] TO <cpar>.
-    ASSIGN <cpar>-dref->* TO FIELD-SYMBOL(<vexception>).
-    ASSIGN tab_cpar[ name = 'G_UPPER' ] TO <cpar>.
-    ASSIGN <cpar>-dref->* TO FIELD-SYMBOL(<g_upper>).
-    attributes = VALUE ty_test_attr(
-        BASE attributes
-        duration       = <time1>
-        rc             = <v_rc>
-        exception_name = <vexception>
-        lower_case     = xsdbool( <g_upper> = abap_false ) ).
-    DELETE tab_cpar
-        WHERE name = 'TIME1'
-           OR name = 'V_RC'
-           OR name = 'VEXCEPTION'
-           OR name = 'G_UPPER'.
-
-    DATA(params_rtts) = zcl_fm_params_rtts=>get( funcname = fm_name ).
-
-    SORT tab_cpar BY name.
-
-    param_bindings_pbo = VALUE #( ).
-    param_bindings_pai = VALUE #( ).
-    LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
-      IF param_rtts->call_function_kind <> abap_func_importing.
-        parameter_name = '%_I' && param_rtts->name.
-        READ TABLE tab_cpar WITH KEY name = parameter_name REFERENCE INTO cpar.
-        IF sy-subrc = 0.
-          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
-              ( name = param_rtts->name value = cpar->dref ) ).
-        ENDIF.
-      ENDIF.
-      IF param_rtts->call_function_kind <> abap_func_exporting.
-        parameter_name = '%_V' && param_rtts->name.
-        READ TABLE tab_cpar WITH KEY name = parameter_name REFERENCE INTO cpar.
-        IF sy-subrc = 0.
-          param_bindings_pai = VALUE #( BASE param_bindings_pai
-              ( name = param_rtts->name value = cpar->dref ) ).
-        ENDIF.
-      ENDIF.
-    ENDLOOP.
-
-    DATA(eufunc_dir) = VALUE eufunc(
-        relid  = 'FL'
-        gruppe = fugr_name
-        name   = fm_name
-        nummer = '999' ).
-
-    zcl_expimp_table=>import_all(
-      EXPORTING
-        export_import_table_name = 'EUFUNC'
-        area                     = 'FL'
-      IMPORTING
-        tab_cpar                 = DATA(tab_cpar_dir)
-      CHANGING
-        id_wa                    = eufunc_dir ).
-
-    ASSIGN tab_cpar_dir[ name = 'TE_DATADIR' ] TO <cpar>.
-    FIELD-SYMBOLS <te_datadir> TYPE STANDARD TABLE.
-    ASSIGN <cpar>-dref->* TO <te_datadir>.
-    datadir_entry = <te_datadir>[ ('CMP00001') = test_id ].
-
-  ENDMETHOD.
-
-  METHOD create_without_execution.
-
-    complete_param_bindings(
-      EXPORTING
-        fm_name            = fm_name
-        param_bindings     = param_bindings
-      IMPORTING
-        new_param_bindings = DATA(new_param_bindings)
-        param_bindings_pbo = DATA(param_bindings_pbo) ).
-
-    save( fm_name            = fm_name
-          title              = title
-          stepid             = 'PBO'
-          new_param_bindings = new_param_bindings
-          param_bindings_pbo = param_bindings_pbo
-          attributes         = VALUE #( lower_case = lower_case ) ).
-
-  ENDMETHOD.
 
   METHOD execute_and_create.
 
@@ -380,7 +320,8 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
     " PARAMETERS
     complete_param_bindings(
       EXPORTING
-        fm_name = fm_name
+        fm_name            = fm_name
+        stepid             = 'PAI'
         param_bindings     = param_bindings
       IMPORTING
         new_param_bindings = DATA(new_param_bindings)
@@ -417,212 +358,38 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
           attributes         = VALUE #(
                 duration        = time1
                 rc              = subrc
-                exception_name  = exceptions[ value = subrc ]-name
+                exception_name  = COND #( WHEN subrc <> 0 THEN exceptions[ value = subrc ]-name )
                 lower_case      = lower_case ) ).
 
   ENDMETHOD.
 
-  METHOD complete_param_bindings.
 
-    DATA: ref_parameter     TYPE REF TO data,
-          ref_parameter_pbo TYPE REF TO data.
-
-    DATA(params_rtts) = zcl_fm_params_rtts=>get( funcname = fm_name ).
-
-    new_param_bindings = VALUE #( ).
-    param_bindings_pbo = VALUE #( ).
-    LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
-      CREATE DATA ref_parameter TYPE HANDLE param_rtts->type.
-      new_param_bindings = VALUE #( BASE new_param_bindings
-          ( name  = param_rtts->name
-            kind  = param_rtts->call_function_kind
-            value = ref_parameter ) ).
-      IF param_rtts->call_function_kind <> abap_func_importing.
-        ASSIGN param_bindings[ name = param_rtts->name ] TO FIELD-SYMBOL(<param_binding>).
-        IF sy-subrc = 0.
-*          ASSIGN <param_binding>-value->* TO FIELD-SYMBOL(<input_parameter>).
-*          ASSIGN ref_parameter->* TO FIELD-SYMBOL(<parameter_value>).
-*          <parameter_value> = <input_parameter>.
-          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
-                ( name = param_rtts->name value = <param_binding>-value ) ).
-        ELSE.
-          CREATE DATA ref_parameter_pbo TYPE HANDLE param_rtts->type.
-          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
-                ( name = param_rtts->name value = ref_parameter_pbo ) ).
-        ENDIF.
-      ENDIF.
-    ENDLOOP.
-
-  ENDMETHOD.
-
-  METHOD save.
+  METHOD get_free_test_id.
 
     DATA(fugr_name) = get_fugr_name( fm_name ).
-
-    DATA(test_id) = get_free_test_id( fm_name ).
-
-    DATA(tab_cpar) = VALUE tab_cpar(
-        ( LINES OF VALUE #(
-            FOR <param_binding2> IN param_bindings_pbo
-            ( name = '%_I' && <param_binding2>-name dref = <param_binding2>-value ) ) )
-        ( LINES OF VALUE #(
-            FOR <param_binding2> IN new_param_bindings
-            WHERE ( kind = abap_func_changing )
-            ( name = '%_O' && <param_binding2>-name dref = <param_binding2>-value )
-            ( name = '%_V' && <param_binding2>-name dref = <param_binding2>-value ) ) )
-        ( LINES OF VALUE #(
-            FOR <param_binding2> IN new_param_bindings
-            WHERE ( kind = abap_func_importing )
-            ( name = '%_V' && <param_binding2>-name dref = <param_binding2>-value ) ) )
-        ( LINES OF VALUE #(
-            FOR <param_binding2> IN new_param_bindings
-            WHERE ( kind = abap_func_tables )
-            ( name = '%_V' && <param_binding2>-name dref = <param_binding2>-value ) ) )
-        ( name = 'TIME1'      dref = NEW ty_test_attr-duration( attributes-duration ) )
-        ( name = 'V_RC'       dref = NEW ty_test_attr-rc( attributes-rc ) )
-        ( name = 'VEXCEPTION' dref = NEW ty_test_attr-exception_name( attributes-exception_name ) )
-        ( name = 'G_UPPER'    dref = NEW ty_test_attr-lower_case( xsdbool( attributes-lower_case = abap_false ) ) ) ).
-
-    zcl_expimp_table=>export_all(
-      EXPORTING
-        tabname  = 'EUFUNC'
-        area     = 'FL'
-        id_wa    = VALUE eufunc(
-            gruppe  = fugr_name
-            name    = fm_name
-            nummer  = test_id
-            seqid   = ' '
-            langu   = ' '
-            autor   = sy-uname
-            datum   = sy-datum
-            zeit    = sy-uzeit
-            version = '  1 ' )
-        tab_cpar = tab_cpar ).
-
-
-    DATA(context) = load_test_context( fm_name ).
-
-    context-te_datadir = VALUE #(
-        BASE context-te_datadir
-        ( VALUE #(
-          dataid = test_id
-          stepid = stepid
-          seqid  = ''
-          datum  = sy-datum
-          uzeit  = sy-uzeit
-          title  = title ) ) ).
-
-    save_test_context( fm_name = fm_name context = context ).
+    SELECT MAX( nummer )
+        FROM eufunc
+        WHERE relid  = 'FL'
+          AND gruppe = @fugr_name
+          AND name   = @fm_name
+          AND nummer <> '999'
+        INTO @test_id.
+    TYPES ty_p TYPE p LENGTH 10 DECIMALS 0.
+    DATA(test_id_p) = CONV ty_p( test_id + 1 ).
+    test_id = test_id_p.
 
   ENDMETHOD.
 
-  METHOD in_describe_interface.
 
-    DATA: if_import     TYPE TABLE OF rsimp,
-          if_change     TYPE TABLE OF rscha,
-          if_export     TYPE TABLE OF rsexp,
-          if_tables     TYPE TABLE OF rstbl,
-          if_except     TYPE TABLE OF rsexc,
-          documentation TYPE TABLE OF funct.
+  METHOD get_fugr_name.
 
-    REFRESH: if_import, if_export, if_change, if_tables, if_except,
-             documentation.
-
-    CALL FUNCTION 'FUNCTION_IMPORT_DOKU'
-      EXPORTING
-        funcname           = p_fname
-        with_enhancements  = 'X'
-      TABLES
-        exception_list     = if_except
-        export_parameter   = if_export
-        import_parameter   = if_import
-        changing_parameter = if_change
-        tables_parameter   = if_tables
-        dokumentation      = documentation
-      EXCEPTIONS
-        error_message      = 1
-        function_not_found = 2
-        invalid_name       = 3
-        OTHERS             = 4.
-
-    LOOP AT if_import INTO DATA(f_import).
-      in_describe_fields(
-        EXPORTING
-          p_fname     = p_fname
-          p_parameter = f_import-parameter
-          p_typ       = f_import-typ
-          p_struc     = f_import-dbfield
-          p_kind      = 'I'
-        CHANGING
-          struc_info_table_copy  = struc_info_table_copy
-          fdesc2 = fdesc2 ).
-    ENDLOOP.
-
-* --Changefelder : Name, Länge und Typ bestimmen
-    LOOP AT if_change INTO DATA(f_change).
-      in_describe_fields(
-        EXPORTING
-          p_fname     = p_fname
-          p_parameter = f_change-parameter
-          p_typ       = f_change-typ
-          p_struc     = f_change-dbfield
-          p_kind      = 'C'
-        CHANGING
-          struc_info_table_copy  = struc_info_table_copy
-          fdesc2 = fdesc2 ).
-    ENDLOOP.
-
-* --Exportfelder : Name, Länge und Typ bestimmen
-    LOOP AT if_export INTO DATA(f_export).                   "keine neue Beschreibung wenn
-      READ TABLE fdesc2 WITH KEY name = f_export-parameter INTO DATA(fdesc).  "schon IMPORT
-      IF sy-subrc = 0.                   "Schon Input-Parameter ?
-        IF fdesc-ftype = 'I'.            "nur Typ entsprechend ändern
-          fdesc-ftype = 'IO'.
-        ELSEIF fdesc-ftype = 'IS'.
-          fdesc-ftype = 'IOS'.
-        ENDIF.
-        MODIFY fdesc2 FROM fdesc INDEX sy-tabix.
-      ELSE.
-        in_describe_fields(
-          EXPORTING
-            p_fname     = p_fname
-            p_parameter = f_export-parameter
-            p_typ       = f_export-typ
-            p_struc     = f_export-dbfield
-            p_kind      = 'O'
-          CHANGING
-          struc_info_table_copy  = struc_info_table_copy
-          fdesc2 = fdesc2 ).
-      ENDIF.
-    ENDLOOP.
-
-* --Tablesfelder : Name, Länge und Typ bestimmen
-    LOOP AT if_tables INTO DATA(f_tables).
-      in_describe_fields(
-        EXPORTING
-          p_fname     = p_fname
-          p_parameter = f_tables-parameter
-          p_typ       = f_tables-typ
-          p_struc     = f_tables-dbstruct
-          p_kind      = 'T'
-        CHANGING
-          struc_info_table_copy  = struc_info_table_copy
-          fdesc2 = fdesc2 ).
-    ENDLOOP.
-
-* --Exceptions : Nix zu Bestimmen
-    LOOP AT if_except INTO DATA(f_except).
-      CLEAR fdesc.
-      fdesc-name = f_except-exception.
-      APPEND fdesc TO fdesc2.
-    ENDLOOP.
-
-* Abtrennen
-    CLEAR fdesc.
-    fdesc-name = '*'.
-    APPEND fdesc TO fdesc2.
+    SELECT SINGLE pname
+        FROM tfdir
+        WHERE funcname = @fm_name INTO @fugr_name.
+    REPLACE 'SAPL' IN fugr_name WITH ``.
 
   ENDMETHOD.
+
 
   METHOD in_describe_fields.
     " Same as subroutine IN_DESCRIBE_FIELDS in SAPLSEUJ.
@@ -637,12 +404,15 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 *    exceptions
 *      generation_error = 1
 *      others           = 2.
-    READ TABLE params_rtti ASSIGNING FIELD-SYMBOL(<param_rtti>)
-          WITH KEY pname = p_parameter.
+    READ TABLE params_rtts ASSIGNING FIELD-SYMBOL(<param_rtts>)
+          WITH KEY name = p_parameter.
     ASSERT sy-subrc = 0.
 
     DATA: l_type_info TYPE  nf2ty_struc_info.
-    ASSIGN <param_rtti>-value->* TO FIELD-SYMBOL(<value>).
+*    DATA dref TYPE REF TO data.
+*    CREATE DATA dref TYPE HANDLE <param_rtts>-type.
+*    ASSIGN dref->* TO FIELD-SYMBOL(<value>).
+    ASSIGN <param_rtts>-value->* TO FIELD-SYMBOL(<value>).
     CALL FUNCTION 'RS_COMPLEX_OBJECT_TYPEINFO_GET'
       EXPORTING
         object_name = p_parameter
@@ -709,30 +479,393 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
     APPEND fdesc TO fdesc2.
   ENDMETHOD.
 
-  METHOD get_fugr_name.
 
-    SELECT SINGLE pname
-        FROM tfdir
-        WHERE funcname = @fm_name INTO @fugr_name.
-    REPLACE 'SAPL' IN fugr_name WITH ``.
+  METHOD in_describe_interface.
+
+    DATA: if_import     TYPE TABLE OF rsimp,
+          if_change     TYPE TABLE OF rscha,
+          if_export     TYPE TABLE OF rsexp,
+          if_tables     TYPE TABLE OF rstbl,
+          if_except     TYPE TABLE OF rsexc,
+          documentation TYPE TABLE OF funct.
+
+    REFRESH: if_import, if_export, if_change, if_tables, if_except,
+             documentation.
+
+    CALL FUNCTION 'FUNCTION_IMPORT_DOKU'
+      EXPORTING
+        funcname           = p_fname
+        with_enhancements  = 'X'
+      TABLES
+        exception_list     = if_except
+        export_parameter   = if_export
+        import_parameter   = if_import
+        changing_parameter = if_change
+        tables_parameter   = if_tables
+        dokumentation      = documentation
+      EXCEPTIONS
+        error_message      = 1
+        function_not_found = 2
+        invalid_name       = 3
+        OTHERS             = 4.
+
+    LOOP AT if_import INTO DATA(f_import).
+      in_describe_fields(
+        EXPORTING
+          p_fname               = p_fname
+          p_parameter           = f_import-parameter
+          p_typ                 = f_import-typ
+          p_struc               = f_import-dbfield
+          p_kind                = 'I'
+        CHANGING
+          struc_info_table_copy = struc_info_table_copy
+          fdesc2                = fdesc2 ).
+    ENDLOOP.
+
+* --Changefelder : Name, Länge und Typ bestimmen
+    LOOP AT if_change INTO DATA(f_change).
+      in_describe_fields(
+        EXPORTING
+          p_fname               = p_fname
+          p_parameter           = f_change-parameter
+          p_typ                 = f_change-typ
+          p_struc               = f_change-dbfield
+          p_kind                = 'C'
+        CHANGING
+          struc_info_table_copy = struc_info_table_copy
+          fdesc2                = fdesc2 ).
+    ENDLOOP.
+
+* --Exportfelder : Name, Länge und Typ bestimmen
+    LOOP AT if_export INTO DATA(f_export).                   "keine neue Beschreibung wenn
+      READ TABLE fdesc2 WITH KEY name = f_export-parameter INTO DATA(fdesc).  "schon IMPORT
+      IF sy-subrc = 0.                   "Schon Input-Parameter ?
+        IF fdesc-ftype = 'I'.            "nur Typ entsprechend ändern
+          fdesc-ftype = 'IO'.
+        ELSEIF fdesc-ftype = 'IS'.
+          fdesc-ftype = 'IOS'.
+        ENDIF.
+        MODIFY fdesc2 FROM fdesc INDEX sy-tabix.
+      ELSE.
+        in_describe_fields(
+          EXPORTING
+            p_fname               = p_fname
+            p_parameter           = f_export-parameter
+            p_typ                 = f_export-typ
+            p_struc               = f_export-dbfield
+            p_kind                = 'O'
+          CHANGING
+            struc_info_table_copy = struc_info_table_copy
+            fdesc2                = fdesc2 ).
+      ENDIF.
+    ENDLOOP.
+
+* --Tablesfelder : Name, Länge und Typ bestimmen
+    LOOP AT if_tables INTO DATA(f_tables).
+      in_describe_fields(
+        EXPORTING
+          p_fname               = p_fname
+          p_parameter           = f_tables-parameter
+          p_typ                 = f_tables-typ
+          p_struc               = f_tables-dbstruct
+          p_kind                = 'T'
+        CHANGING
+          struc_info_table_copy = struc_info_table_copy
+          fdesc2                = fdesc2 ).
+    ENDLOOP.
+
+* --Exceptions : Nix zu Bestimmen
+    LOOP AT if_except INTO DATA(f_except).
+      CLEAR fdesc.
+      fdesc-name = f_except-exception.
+      APPEND fdesc TO fdesc2.
+    ENDLOOP.
+
+* Abtrennen
+    CLEAR fdesc.
+    fdesc-name = '*'.
+    APPEND fdesc TO fdesc2.
 
   ENDMETHOD.
 
-  METHOD get_free_test_id.
+
+  METHOD load.
+
+    DATA: parameter_name TYPE string,
+          cpar           TYPE REF TO cpar.
+    FIELD-SYMBOLS:
+      <param_binding>       TYPE abap_func_parmbind,
+      <cpar_value>          TYPE any,
+      <param_binding_value> TYPE any.
 
     DATA(fugr_name) = get_fugr_name( fm_name ).
-    SELECT MAX( nummer )
-        FROM eufunc
-        WHERE relid  = 'FL'
-          AND gruppe = @fugr_name
-          AND name   = @fm_name
-          AND nummer <> '999'
-        INTO @test_id.
-    TYPES ty_p TYPE p LENGTH 10 DECIMALS 0.
-    DATA(test_id_p) = CONV ty_p( test_id + 1 ).
-    test_id = test_id_p.
+
+    DATA(eufunc) = VALUE eufunc(
+        relid   = 'FL'
+        gruppe  = fugr_name
+        name    = fm_name
+        nummer  = test_id ).
+
+    zcl_expimp_table=>import_all(
+      EXPORTING
+        table_name = 'EUFUNC'
+        area       = 'FL'
+      IMPORTING
+        tab_cpar   = DATA(tab_cpar)
+      CHANGING
+        id_wa      = eufunc ).
+
+    attributes = VALUE ty_test_attr(
+            author  = eufunc-autor
+            datum   = eufunc-datum
+            zeit    = eufunc-zeit
+            version = eufunc-version ).
+
+    FIELD-SYMBOLS <cpar> TYPE cpar.
+    ASSIGN tab_cpar[ name = 'TIME1' ] TO <cpar>.
+    ASSIGN <cpar>-dref->* TO FIELD-SYMBOL(<time1>).
+    ASSIGN tab_cpar[ name = 'V_RC' ] TO <cpar>.
+    ASSIGN <cpar>-dref->* TO FIELD-SYMBOL(<v_rc>).
+    ASSIGN tab_cpar[ name = 'VEXCEPTION' ] TO <cpar>.
+    ASSIGN <cpar>-dref->* TO FIELD-SYMBOL(<vexception>).
+    ASSIGN tab_cpar[ name = 'G_UPPER' ] TO <cpar>.
+    ASSIGN <cpar>-dref->* TO FIELD-SYMBOL(<g_upper>).
+    attributes = VALUE ty_test_attr(
+        BASE attributes
+        duration       = <time1>
+        rc             = <v_rc>
+        exception_name = <vexception>
+        lower_case     = xsdbool( <g_upper> = abap_false ) ).
+    DELETE tab_cpar
+        WHERE name = 'TIME1'
+           OR name = 'V_RC'
+           OR name = 'VEXCEPTION'
+           OR name = 'G_UPPER'.
+
+    TRY.
+        DATA(params_rtts) = zcl_fm_params_rtts=>get( funcname = fm_name ).
+      CATCH zcx_fm_params_rtts.
+        RAISE EXCEPTION TYPE zcx_fm_test_data.
+    ENDTRY.
+
+    SORT tab_cpar BY name.
+
+    LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
+
+      IF param_rtts->call_function_kind <> abap_func_importing.
+        parameter_name = '%_I' && param_rtts->name.
+        READ TABLE tab_cpar WITH KEY name = parameter_name REFERENCE INTO cpar.
+        IF sy-subrc = 0.
+          ASSIGN param_bindings_pbo[
+                  kind = param_rtts->call_function_kind
+                  name = param_rtts->name ]
+              TO <param_binding>.
+          IF sy-subrc <> 0.
+          ASSIGN param_bindings_pbo[
+                  kind = 0
+                  name = param_rtts->name ]
+              TO <param_binding>.
+          ENDIF.
+          IF sy-subrc = 0.
+            ASSIGN cpar->dref->* TO <cpar_value>.
+            ASSIGN <param_binding>-value->* TO <param_binding_value>.
+            <param_binding_value> = <cpar_value>.
+          ELSE.
+            INSERT VALUE abap_func_parmbind( kind = param_rtts->call_function_kind name = param_rtts->name )
+                INTO TABLE param_bindings_pbo
+                ASSIGNING <param_binding>.
+            <param_binding>-value = cpar->dref.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+      IF param_rtts->call_function_kind <> abap_func_exporting.
+        parameter_name = '%_V' && param_rtts->name.
+        READ TABLE tab_cpar WITH KEY name = parameter_name REFERENCE INTO cpar.
+        IF sy-subrc = 0.
+          ASSIGN param_bindings_pai[
+                  kind = param_rtts->call_function_kind
+                  name = param_rtts->name ]
+              TO <param_binding>.
+          IF sy-subrc <> 0.
+          ASSIGN param_bindings_pAI[
+                  kind = 0
+                  name = param_rtts->name ]
+              TO <param_binding>.
+          ENDIF.
+          IF sy-subrc = 0.
+            ASSIGN cpar->dref->* TO <cpar_value>.
+            ASSIGN <param_binding>-value->* TO <param_binding_value>.
+            <param_binding_value> = <cpar_value>.
+          ELSE.
+            INSERT VALUE abap_func_parmbind( kind = param_rtts->call_function_kind name = param_rtts->name )
+                INTO TABLE param_bindings_pai
+                ASSIGNING <param_binding>.
+            <param_binding>-value = cpar->dref.
+          ENDIF.
+        ENDIF.
+      ENDIF.
+
+    ENDLOOP.
+
+    DATA(eufunc_dir) = VALUE eufunc(
+        relid  = 'FL'
+        gruppe = fugr_name
+        name   = fm_name
+        nummer = '999' ).
+
+    zcl_expimp_table=>import_all(
+      EXPORTING
+        table_name = 'EUFUNC'
+        area                     = 'FL'
+      IMPORTING
+        tab_cpar                 = DATA(tab_cpar_dir)
+      CHANGING
+        id_wa                    = eufunc_dir ).
+
+    ASSIGN tab_cpar_dir[ name = 'TE_DATADIR' ] TO <cpar>.
+    FIELD-SYMBOLS <te_datadir> TYPE STANDARD TABLE.
+    ASSIGN <cpar>-dref->* TO <te_datadir>.
+    datadir_entry = <te_datadir>[ ('CMP00001') = test_id ].
 
   ENDMETHOD.
 
-ENDCLASS.
 
+  METHOD load_test_context.
+
+    DATA(local_params_rtts) = zcl_fm_params_rtts=>get( fm_name ).
+    params_rtts = VALUE #( ).
+    LOOP AT local_params_rtts REFERENCE INTO DATA(local_param_rtts).
+      DATA(param_rtts) = VALUE ty_us_rtts( name = local_param_rtts->name ).
+      CREATE DATA param_rtts-value TYPE HANDLE local_param_rtts->type.
+      APPEND param_rtts TO params_rtts.
+    ENDLOOP.
+
+    DATA(fugr_name) = get_fugr_name( fm_name ).
+
+    DATA(d102n_exportkey) = VALUE functdir(
+        area   = fugr_name
+        progid = fm_name
+        dataid = '999'
+        seqid  = ' ' ).
+
+    IMPORT  te_datadir            TO context-te_datadir
+            fdesc_copy            TO context-fdesc_copy
+            struc_info_table_copy TO context-struc_info_table_copy
+            g_no_save             TO context-g_no_save
+            d102_fname            TO context-d102_fname
+        FROM DATABASE eufunc(fl)
+        ID d102n_exportkey.
+
+    IF sy-subrc <> 0.
+      " FDESC is initialized by subroutine IN_DESCRIBE_INTERFACE in SAPLSEUJ, for
+      " all parameters and exceptions.
+      " The list of parameters are initially retrieved via function module FUNCTION_IMPORT_DOKU.
+      DATA(fdesc) = VALUE ty_fdesc( ).
+      " STRUC_INFO_TABLE is initialized by subroutine IN_DESCRIBE_INTERFACE in SAPLSEUJ,
+      " by calling the function module RS_COMPLEX_OBJECT_TYPEINFO_GET for all parameters
+      " except EXPORTING parameters.
+      context-struc_info_table_copy = VALUE #( ).
+      in_describe_interface(
+        EXPORTING
+          p_fname               = fm_name
+        IMPORTING
+          struc_info_table_copy = context-struc_info_table_copy
+          fdesc2                = fdesc ).
+      context-fdesc_copy = fdesc.
+      " G_NO_SAVE = ' ' if test data is possible, = 'X' if test data is not possible.
+      context-g_no_save = ' '.
+      " D102_FNAME
+      context-d102_fname = fm_name.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+  METHOD save.
+
+    DATA(fugr_name) = get_fugr_name( fm_name ).
+
+    DATA(test_id) = get_free_test_id( fm_name ).
+
+    DATA(tab_cpar) = VALUE tab_cpar(
+        ( LINES OF VALUE #(
+            FOR <param_binding2> IN param_bindings_pbo
+            ( name = '%_I' && <param_binding2>-name dref = <param_binding2>-value ) ) )
+        ( LINES OF VALUE #(
+            FOR <param_binding2> IN new_param_bindings
+            WHERE ( kind = abap_func_changing )
+            ( name = '%_O' && <param_binding2>-name dref = <param_binding2>-value )
+            ( name = '%_V' && <param_binding2>-name dref = <param_binding2>-value ) ) )
+        ( LINES OF VALUE #(
+            FOR <param_binding2> IN new_param_bindings
+            WHERE ( kind = abap_func_importing )
+            ( name = '%_V' && <param_binding2>-name dref = <param_binding2>-value ) ) )
+        ( LINES OF VALUE #(
+            FOR <param_binding2> IN new_param_bindings
+            WHERE ( kind = abap_func_tables )
+            ( name = '%_V' && <param_binding2>-name dref = <param_binding2>-value ) ) )
+        ( name = 'TIME1'      dref = NEW ty_test_attr-duration( attributes-duration ) )
+        ( name = 'V_RC'       dref = NEW ty_test_attr-rc( attributes-rc ) )
+        ( name = 'VEXCEPTION' dref = NEW ty_test_attr-exception_name( attributes-exception_name ) )
+        ( name = 'G_UPPER'    dref = NEW ty_test_attr-lower_case( xsdbool( attributes-lower_case = abap_false ) ) ) ).
+
+    TRY.
+        zcl_expimp_table=>export_all(
+          EXPORTING
+            table_name  = 'EUFUNC'
+            area     = 'FL'
+            id_wa    = VALUE eufunc(
+                gruppe  = fugr_name
+                name    = fm_name
+                nummer  = test_id
+                seqid   = ' '
+                langu   = ' '
+                autor   = sy-uname
+                datum   = sy-datum
+                zeit    = sy-uzeit
+                version = '  1 ' )
+            tab_cpar = tab_cpar ).
+      CATCH zcx_expimp_table.
+        RAISE EXCEPTION TYPE zcx_fm_test_data.
+    ENDTRY.
+
+
+    DATA(context) = load_test_context( fm_name ).
+
+    context-te_datadir = VALUE #(
+        BASE context-te_datadir
+        ( VALUE #(
+          dataid = test_id
+          stepid = stepid
+          seqid  = ''
+          datum  = sy-datum
+          uzeit  = sy-uzeit
+          title  = title ) ) ).
+
+    save_test_context( fm_name = fm_name context = context ).
+
+  ENDMETHOD.
+
+
+  METHOD save_test_context.
+
+    DATA(fugr_name) = get_fugr_name( fm_name ).
+
+    DATA(d102n_exportkey) = VALUE functdir(
+        area   = fugr_name
+        progid = fm_name
+        dataid = '999'
+        seqid  = ' ' ).
+
+    EXPORT
+        te_datadir            FROM context-te_datadir
+        fdesc_copy            FROM context-fdesc_copy
+        struc_info_table_copy FROM context-struc_info_table_copy
+        g_no_save             FROM context-g_no_save
+        d102_fname            FROM context-d102_fname
+      TO DATABASE eufunc(fl)
+      ID d102n_exportkey.
+
+  ENDMETHOD.
+ENDCLASS.
