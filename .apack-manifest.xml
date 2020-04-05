@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+ <asx:values>
+  <DATA>
+   <GROUP_ID>github.com/sandraros</GROUP_ID>
+   <ARTIFACT_ID>FM-Test-Data</ARTIFACT_ID>
+   <VERSION>0.2</VERSION>
+   <REPOSITORY_TYPE>abapGit</REPOSITORY_TYPE>
+   <GIT_URL>https://github.com/sandraros/FM-Test-Data.git</GIT_URL>
+   <DEPENDENCIES>
+    <item>
+     <GROUP_ID>github.com/sandraros</GROUP_ID>
+     <ARTIFACT_ID>Export-Import-Tables</ARTIFACT_ID>
+     <VERSION>0.2</VERSION>
+     <GIT_URL>https://github.com/sandraros/Export-Import-Tables.git</GIT_URL>
+    </item>
+    <item>
+     <GROUP_ID>github.com/sandraros</GROUP_ID>
+     <ARTIFACT_ID>FM-params-RTTS</ARTIFACT_ID>
+     <VERSION>0.2</VERSION>
+     <GIT_URL>https://github.com/sandraros/FM-params-RTTS.git</GIT_URL>
+    </item>
+   </DEPENDENCIES>
+  </DATA>
+ </asx:values>
+</asx:abap>

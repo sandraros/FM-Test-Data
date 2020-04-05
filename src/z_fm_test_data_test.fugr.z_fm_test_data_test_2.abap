@@ -1,0 +1,18 @@
+FUNCTION Z_FM_TEST_DATA_TEST_2.
+*"----------------------------------------------------------------------
+*"*"Local Interface:
+*"  IMPORTING
+*"     REFERENCE(IMPORT) TYPE  STRING OPTIONAL
+*"     REFERENCE(BAPIRET1) TYPE  BAPIRET1 OPTIONAL
+*"  EXPORTING
+*"     REFERENCE(EXPORT) TYPE  STRING
+*"  TABLES
+*"      TABLES_ STRUCTURE  SFLIGHT OPTIONAL
+*"  CHANGING
+*"     REFERENCE(CHANGING) TYPE  STRING OPTIONAL
+*"     REFERENCE(A234567890_234567890_234567890) TYPE  STRING OPTIONAL
+*"----------------------------------------------------------------------
+
+
+
+ENDFUNCTION.
