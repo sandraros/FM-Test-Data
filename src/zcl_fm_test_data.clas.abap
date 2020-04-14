@@ -408,10 +408,7 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
           WITH KEY name = p_parameter.
     ASSERT sy-subrc = 0.
 
-    DATA: l_type_info TYPE  nf2ty_struc_info.
-*    DATA dref TYPE REF TO data.
-*    CREATE DATA dref TYPE HANDLE <param_rtts>-type.
-*    ASSIGN dref->* TO FIELD-SYMBOL(<value>).
+    DATA(l_type_info) = VALUE nf2ty_struc_info( ).
     ASSIGN <param_rtts>-value->* TO FIELD-SYMBOL(<value>).
     CALL FUNCTION 'RS_COMPLEX_OBJECT_TYPEINFO_GET'
       EXPORTING
@@ -661,10 +658,10 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
                   name = param_rtts->name ]
               TO <param_binding>.
           IF sy-subrc <> 0.
-          ASSIGN param_bindings_pbo[
-                  kind = 0
-                  name = param_rtts->name ]
-              TO <param_binding>.
+            ASSIGN param_bindings_pbo[
+                    kind = 0
+                    name = param_rtts->name ]
+                TO <param_binding>.
           ENDIF.
           IF sy-subrc = 0.
             ASSIGN cpar->dref->* TO <cpar_value>.
@@ -688,10 +685,10 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
                   name = param_rtts->name ]
               TO <param_binding>.
           IF sy-subrc <> 0.
-          ASSIGN param_bindings_pAI[
-                  kind = 0
-                  name = param_rtts->name ]
-              TO <param_binding>.
+            ASSIGN param_bindings_pai[
+                    kind = 0
+                    name = param_rtts->name ]
+                TO <param_binding>.
           ENDIF.
           IF sy-subrc = 0.
             ASSIGN cpar->dref->* TO <cpar_value>.

@@ -252,38 +252,31 @@ CLASS lcl_app IMPLEMENTATION.
 
   METHOD recovery.
 
-    TYPES: BEGIN OF ty_source,
-             import                         TYPE string,
-             bapireturn                     TYPE bapireturn,
-             export                         TYPE string,
-             changing                       TYPE string,
-             a234567890_234567890_234567890 TYPE string,
-             tables_                        TYPE STANDARD TABLE OF sflight WITH EMPTY KEY,
-           END OF ty_source.
-    TYPES: BEGIN OF ty_target,
-             import                         TYPE string,
-             bapiret1                       TYPE bapiret1,
-             export                         TYPE string,
-             changing                       TYPE string,
-             a234567890_234567890_234567890 TYPE string,
-             tables_                        TYPE STANDARD TABLE OF sflight WITH EMPTY KEY,
-           END OF ty_target.
-    DATA: source             TYPE ty_source,
-          target             TYPE ty_target,
-          param_bindings_pbo TYPE abap_func_parmbind_tab.
-    FIELD-SYMBOLS:
-    <param_binding> TYPE abap_func_parmbind.
+    TYPES: BEGIN OF ty_arguments,
+             import     TYPE string,
+             bapireturn TYPE bapireturn,
+             export     TYPE string,
+             changing   TYPE string,
+             tables_    TYPE STANDARD TABLE OF sflight WITH EMPTY KEY,
+           END OF ty_arguments.
+    TYPES: BEGIN OF ty_results,
+             import   TYPE string,
+             bapiret1 TYPE bapiret1,
+             export   TYPE string,
+             changing TYPE string,
+             tables_  TYPE STANDARD TABLE OF sflight WITH EMPTY KEY,
+           END OF ty_results.
 
     DATA(from_fm_name) = CONV tfdir-funcname( 'Z_FM_TEST_DATA_TEST' ).
     DATA(to_fm_name) = CONV tfdir-funcname( 'Z_FM_TEST_DATA_TEST_2' ).
 
-    param_bindings_pbo = VALUE #(
-          ( name = 'IMPORT' value = REF #( source-import ) )
+    DATA(source) = VALUE ty_arguments( ).
+    DATA(param_bindings_pbo) = VALUE abap_func_parmbind_tab(
+          ( name = 'IMPORT'     value = REF #( source-import ) )
           ( name = 'BAPIRETURN' value = REF #( source-bapireturn ) )
-          ( name = 'EXPORT' value = REF #( source-export ) )
-          ( name = 'CHANGING' value = REF #( source-changing ) )
-          ( name = 'A234567890_234567890_234567890' value = REF #( source-a234567890_234567890_234567890 ) )
-          ( name = 'TABLES_' value = REF #( source-tables_ ) ) ).
+          ( name = 'EXPORT'     value = REF #( source-export ) )
+          ( name = 'CHANGING'   value = REF #( source-changing ) )
+          ( name = 'TABLES_'    value = REF #( source-tables_ ) ) ).
 
     zcl_fm_test_data=>load(
       EXPORTING
@@ -295,8 +288,8 @@ CLASS lcl_app IMPLEMENTATION.
       CHANGING
         param_bindings_pbo = param_bindings_pbo ).
 
-    target = CORRESPONDING #( source ).
-    target-bapiret1 = VALUE #(
+    DATA(results) = CORRESPONDING ty_results( source ).
+    results-bapiret1 = VALUE #(
         BASE CORRESPONDING #( source-bapireturn )
         id     = source-bapireturn-code(2)
         number = source-bapireturn-code+2 ).
@@ -306,12 +299,11 @@ CLASS lcl_app IMPLEMENTATION.
         fm_name        = to_fm_name
         title          = datadir_entry-title
         param_bindings = VALUE #(
-                  ( name = 'IMPORT' value = REF #( target-import ) )
-                  ( name = 'BAPIRET1' value = REF #( target-bapiret1 ) )
-                  ( name = 'EXPORT' value = REF #( target-export ) )
-                  ( name = 'CHANGING' value = REF #( target-changing ) )
-                  ( name = 'A234567890_234567890_234567890' value = REF #( target-a234567890_234567890_234567890 ) )
-                  ( name = 'TABLES_' value = REF #( target-tables_ ) ) ) ).
+          ( name = 'IMPORT'     value = REF #( results-import ) )
+          ( name = 'BAPIRET1'   value = REF #( results-bapiret1 ) )
+          ( name = 'EXPORT'     value = REF #( results-export ) )
+          ( name = 'CHANGING'   value = REF #( results-changing ) )
+          ( name = 'TABLES_'    value = REF #( results-tables_ ) ) ) ).
 
     COMMIT WORK.
 
