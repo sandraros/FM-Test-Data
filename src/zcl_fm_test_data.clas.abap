@@ -1,3 +1,4 @@
+"! <p class="shorttext synchronized" lang="en">Utility for Function Module Test Data</p>
 CLASS zcl_fm_test_data DEFINITION
   PUBLIC
   FINAL
@@ -155,10 +156,7 @@ CLASS zcl_fm_test_data DEFINITION
            END OF ty_context,
            BEGIN OF ty_us_rtts,
              value TYPE REF TO data,
-**             kind   TYPE i,
-**             pname  TYPE string,
              name  TYPE string,
-*             o_rtts TYPE REF TO cl_abap_datadescr,
            END OF ty_us_rtts,
            ty_ut_rtts TYPE STANDARD TABLE OF ty_us_rtts WITH DEFAULT KEY.
 
@@ -714,11 +712,11 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
     zcl_expimp_table=>import_all(
       EXPORTING
         table_name = 'EUFUNC'
-        area                     = 'FL'
+        area       = 'FL'
       IMPORTING
-        tab_cpar                 = DATA(tab_cpar_dir)
+        tab_cpar   = DATA(tab_cpar_dir)
       CHANGING
-        id_wa                    = eufunc_dir ).
+        id_wa      = eufunc_dir ).
 
     ASSIGN tab_cpar_dir[ name = 'TE_DATADIR' ] TO <cpar>.
     FIELD-SYMBOLS <te_datadir> TYPE STANDARD TABLE.
