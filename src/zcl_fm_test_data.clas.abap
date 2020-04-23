@@ -141,7 +141,9 @@ CLASS zcl_fm_test_data DEFINITION
     CLASS-METHODS delete
       IMPORTING
         fm_name TYPE tfdir-funcname
-        test_id TYPE numeric.
+        test_id TYPE numeric
+      RAISING
+        zcx_fm_test_data.
 
   PROTECTED SECTION.
 
@@ -164,7 +166,9 @@ CLASS zcl_fm_test_data DEFINITION
       IMPORTING
         fm_name        TYPE tfdir-funcname
       RETURNING
-        VALUE(context) TYPE ty_context.
+        VALUE(context) TYPE ty_context
+      RAISING
+        zcx_fm_test_data.
 
     CLASS-METHODS save_test_context
       IMPORTING
@@ -223,6 +227,14 @@ CLASS zcl_fm_test_data DEFINITION
       RAISING
         zcx_fm_test_data.
 
+    CLASS-METHODS get_fm_params_rtts
+      IMPORTING
+        funcname           TYPE tfdir-funcname
+      RETURNING
+        VALUE(params_rtts) TYPE zcl_fm_params_rtts=>ty_params_rtts
+      RAISING
+        zcx_fm_test_data.
+
     CLASS-DATA: params_rtts TYPE ty_ut_rtts."zcl_fm_params_rtts=>ty_params_rtts.
 
 ENDCLASS.
@@ -237,11 +249,7 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
     DATA: ref_parameter     TYPE REF TO data,
           ref_parameter_pbo TYPE REF TO data.
 
-    TRY.
-        DATA(params_rtts) = zcl_fm_params_rtts=>get( funcname = fm_name ).
-      CATCH zcx_fm_params_rtts.
-        RAISE EXCEPTION TYPE zcx_fm_test_data.
-    ENDTRY.
+    DATA(params_rtts) = get_fm_params_rtts( funcname = fm_name ).
 
     new_param_bindings = VALUE #( ).
     param_bindings_pbo = VALUE #( ).
@@ -296,7 +304,9 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
   METHOD delete.
 
     DATA(context) = load_test_context( fm_name ).
+
     DELETE context-te_datadir WHERE dataid = test_id.
+
     save_test_context( fm_name = fm_name context = context ).
 
     DATA(fugr_name) = get_fugr_name( fm_name ).
@@ -364,7 +374,12 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 
   METHOD get_free_test_id.
 
+    " TODO simulate the standard, which looks for gaps between numbers.
+
+    TYPES ty_p TYPE p LENGTH 10 DECIMALS 0.
+
     DATA(fugr_name) = get_fugr_name( fm_name ).
+
     SELECT MAX( nummer )
         FROM eufunc
         WHERE relid  = 'FL'
@@ -372,7 +387,7 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
           AND name   = @fm_name
           AND nummer <> '999'
         INTO @test_id.
-    TYPES ty_p TYPE p LENGTH 10 DECIMALS 0.
+
     DATA(test_id_p) = CONV ty_p( test_id + 1 ).
     test_id = test_id_p.
 
@@ -390,7 +405,9 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 
 
   METHOD in_describe_fields.
-    " Same as subroutine IN_DESCRIBE_FIELDS in SAPLSEUJ.
+
+    " This method is inspired from subroutine IN_DESCRIBE_FIELDS in SAPLSEUJ.
+
     DATA: l_sline TYPE nf2ty_info_entry,
           fdesc   TYPE ty_fdesc_entry.
 
@@ -476,6 +493,8 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 
 
   METHOD in_describe_interface.
+
+    " This method is inspired from subroutine IN_DESCRIBE_INTERFACE in SAPLSEUJ.
 
     DATA: if_import     TYPE TABLE OF rsimp,
           if_change     TYPE TABLE OF rscha,
@@ -594,21 +613,25 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
       <param_binding_value> TYPE any.
 
     DATA(fugr_name) = get_fugr_name( fm_name ).
+    " DATAID: number formatted like I = right-aligned and sign character at rightmost position
+    data(dataid) = CONV eufunc-nummer( CONV i( test_id ) ).
 
-    DATA(eufunc) = VALUE eufunc(
-        relid   = 'FL'
-        gruppe  = fugr_name
-        name    = fm_name
-        nummer  = test_id ).
-
-    zcl_expimp_table=>import_all(
-      EXPORTING
-        table_name = 'EUFUNC'
-        area       = 'FL'
-      IMPORTING
-        tab_cpar   = DATA(tab_cpar)
-      CHANGING
-        id_wa      = eufunc ).
+    TRY.
+        DATA(eufunc) = VALUE eufunc( ).
+        zcl_expimp_table=>import_all(
+          EXPORTING
+            tabname  = 'EUFUNC'
+            area     = 'FL'
+            id       = VALUE functdir(
+                        area   = fugr_name
+                        progid = fm_name
+                        dataid = dataid )
+          IMPORTING
+            tab_cpar = DATA(tab_cpar)
+            wa       = eufunc ).
+      CATCH zcx_expimp_table.
+        RAISE EXCEPTION TYPE zcx_fm_test_data.
+    ENDTRY.
 
     attributes = VALUE ty_test_attr(
             author  = eufunc-autor
@@ -637,11 +660,7 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
            OR name = 'VEXCEPTION'
            OR name = 'G_UPPER'.
 
-    TRY.
-        DATA(params_rtts) = zcl_fm_params_rtts=>get( funcname = fm_name ).
-      CATCH zcx_fm_params_rtts.
-        RAISE EXCEPTION TYPE zcx_fm_test_data.
-    ENDTRY.
+    DATA(params_rtts) = get_fm_params_rtts( funcname = fm_name ).
 
     SORT tab_cpar BY name.
 
@@ -703,32 +722,35 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 
     ENDLOOP.
 
-    DATA(eufunc_dir) = VALUE eufunc(
-        relid  = 'FL'
-        gruppe = fugr_name
-        name   = fm_name
-        nummer = '999' ).
 
-    zcl_expimp_table=>import_all(
-      EXPORTING
-        table_name = 'EUFUNC'
-        area       = 'FL'
-      IMPORTING
-        tab_cpar   = DATA(tab_cpar_dir)
-      CHANGING
-        id_wa      = eufunc_dir ).
+    TRY.
+        DATA(eufunc_dir) = VALUE eufunc( ).
+        zcl_expimp_table=>import_all(
+          EXPORTING
+            tabname  = 'EUFUNC'
+            area     = 'FL'
+            id       = VALUE functdir(
+                        area   = fugr_name
+                        progid = fm_name
+                        dataid = '999' )
+          IMPORTING
+            tab_cpar = DATA(tab_cpar_dir) ).
+      CATCH zcx_expimp_table.
+        RAISE EXCEPTION TYPE zcx_fm_test_data.
+    ENDTRY.
 
     ASSIGN tab_cpar_dir[ name = 'TE_DATADIR' ] TO <cpar>.
     FIELD-SYMBOLS <te_datadir> TYPE STANDARD TABLE.
     ASSIGN <cpar>-dref->* TO <te_datadir>.
-    datadir_entry = <te_datadir>[ ('CMP00001') = test_id ].
+    datadir_entry = <te_datadir>[ ('CMP00001') = dataid ].
 
   ENDMETHOD.
 
 
   METHOD load_test_context.
 
-    DATA(local_params_rtts) = zcl_fm_params_rtts=>get( fm_name ).
+    DATA(local_params_rtts) = get_fm_params_rtts( fm_name ).
+
     params_rtts = VALUE #( ).
     LOOP AT local_params_rtts REFERENCE INTO DATA(local_param_rtts).
       DATA(param_rtts) = VALUE ty_us_rtts( name = local_param_rtts->name ).
@@ -808,13 +830,13 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
     TRY.
         zcl_expimp_table=>export_all(
           EXPORTING
-            table_name  = 'EUFUNC'
+            tabname  = 'EUFUNC'
             area     = 'FL'
-            id_wa    = VALUE eufunc(
-                gruppe  = fugr_name
-                name    = fm_name
-                nummer  = test_id
-                seqid   = ' '
+            id       = VALUE functdir(
+                area    = fugr_name
+                progid  = fm_name
+                dataid  = test_id )
+            wa       = VALUE eufunc(
                 langu   = ' '
                 autor   = sy-uname
                 datum   = sy-datum
@@ -863,4 +885,38 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
       ID d102n_exportkey.
 
   ENDMETHOD.
+
+  METHOD get_fm_params_rtts.
+
+    TRY.
+        params_rtts = zcl_fm_params_rtts=>get( funcname = funcname ).
+      CATCH zcx_fm_params_rtts.
+        RAISE EXCEPTION TYPE zcx_fm_test_data.
+    ENDTRY.
+
+    " Replace generic types
+    LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
+      IF NOT param_rtts->type->is_instantiatable( ).
+        CASE param_rtts->type->type_kind.
+          WHEN cl_abap_typedescr=>typekind_char
+                OR cl_abap_typedescr=>typekind_clike
+                OR cl_abap_typedescr=>typekind_csequence
+                OR cl_abap_typedescr=>typekind_any.
+            param_rtts->type = cl_abap_elemdescr=>get_c( p_length = 200 ).
+          WHEN cl_abap_typedescr=>typekind_packed.
+            param_rtts->type = cl_abap_elemdescr=>get_p( p_length = 16 p_decimals = 0 ).
+          WHEN cl_abap_typedescr=>typekind_hex.
+            param_rtts->type = cl_abap_elemdescr=>get_x( p_length = 200 ).
+          WHEN cl_abap_typedescr=>typekind_num.
+            param_rtts->type = cl_abap_elemdescr=>get_n( p_length = 200 ).
+          WHEN cl_abap_typedescr=>typekind_decfloat.
+            param_rtts->type = cl_abap_elemdescr=>get_decfloat34( ).
+          WHEN OTHERS.
+            RAISE EXCEPTION TYPE zcx_fm_test_data.
+        ENDCASE.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
 ENDCLASS.
