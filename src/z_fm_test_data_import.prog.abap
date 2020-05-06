@@ -1,9 +1,9 @@
 *&---------------------------------------------------------------------*
-*& Report z_fm_test_data_test
+*& Report Z_FM_TEST_DATA_IMPORT
 *&---------------------------------------------------------------------*
 *&
 *&---------------------------------------------------------------------*
-REPORT z_fm_test_data_export.
+REPORT z_fm_test_data_import.
 
 CLASS lcl_app DEFINITION.
   PUBLIC SECTION.
@@ -12,43 +12,39 @@ CLASS lcl_app DEFINITION.
 
     METHODS constructor
       IMPORTING
+        from_file  TYPE csequence
         fm_names TYPE ty_fm_names
-        nummers  TYPE ty_nummers
-        to_file  TYPE csequence.
+        nummers  TYPE ty_nummers.
 
     METHODS main
       RAISING
         zcx_fm_test_data.
 
-    CLASS-METHODS download
+    CLASS-METHODS upload
       IMPORTING
-        i_filename TYPE csequence
-        i_string   TYPE string.
+        i_filename      TYPE csequence
+      RETURNING
+        VALUE(i_string) TYPE string.
 
     DATA: fm_names TYPE ty_fm_names READ-ONLY,
           nummers  TYPE ty_nummers READ-ONLY,
-          to_file  TYPE string READ-ONLY.
+          from_file  TYPE string READ-ONLY.
 
 ENDCLASS.
 
 CLASS lcl_app IMPLEMENTATION.
 
   METHOD constructor.
-
     me->fm_names = fm_names.
     me->nummers = nummers.
-    me->to_file = to_file.
-
+    me->from_file = from_file.
   ENDMETHOD.
 
   METHOD main.
 
-    DATA: param_bindings_pbo    TYPE abap_func_parmbind_tab,
-          param_bindings_pai    TYPE abap_func_parmbind_tab,
-          test_data_header      TYPE string,
-          arguments_before_call TYPE string,
-          arguments_after_call  TYPE string,
-          generic               TYPE abap_trans_srcbind_tab.
+    DATA: param_bindings_pbo TYPE abap_func_parmbind_tab,
+          param_bindings_pai TYPE abap_func_parmbind_tab,
+          test_data_string   TYPE string.
 
     SELECT * FROM eufunc
     WHERE name   IN @fm_names
@@ -56,7 +52,7 @@ CLASS lcl_app IMPLEMENTATION.
       AND nummer <> '999'
     INTO TABLE @DATA(eufunc_s).
 
-    DATA(file_string) = |<?xml version="1.0"?><testDataRepository>|.
+    DATA(file_string) = |<?xml version="1.0"?><testDataFolder>|.
 
     LOOP AT eufunc_s REFERENCE INTO DATA(eufunc).
 
@@ -80,69 +76,54 @@ CLASS lcl_app IMPLEMENTATION.
           test_id       = eufunc->nummer
           datadir_entry = datadir_entry
           attributes    = attributes
+          pbo           = param_bindings_pbo
+          pai           = param_bindings_pai
         RESULT
-          XML test_data_header
+          XML test_data_string
         OPTIONS
           xml_header = 'no'.
-
-      generic = VALUE abap_trans_srcbind_tab(
-          FOR <pbo> IN param_bindings_pbo
-          ( name  = <pbo>-name
-            value = <pbo>-value ) ).
 
       CALL TRANSFORMATION id
         SOURCE
-          (generic)
+          fm_name       = eufunc->name
+          test_id       = eufunc->nummer
+          datadir_entry = datadir_entry
+          attributes    = attributes
+          pbo           = param_bindings_pbo
+          pai           = param_bindings_pai
         RESULT
-          XML arguments_before_call
+          XML test_data_string
         OPTIONS
           xml_header = 'no'.
 
-      generic = VALUE abap_trans_srcbind_tab(
-          FOR <pai> IN param_bindings_pai
-          ( name  = <pai>-name
-            value = <pai>-value ) ).
-
-      CALL TRANSFORMATION id
-        SOURCE
-          (generic)
-        RESULT
-          XML arguments_after_call
-        OPTIONS
-          xml_header = 'no'.
-
-      file_string = |{ file_string }<testData>{ test_data_header
-                    }<argumentsBeforeCall>{ arguments_before_call }</argumentsBeforeCall>| &&
-                    |<argumentsAfterCall>{ arguments_after_call }</argumentsAfterCall>| &&
-                    |</testData>|.
+      file_string = |{ file_string }<testData>{ test_data_string }</testData>|.
 
     ENDLOOP.
 
-    file_string = |{ file_string }</testDataRepository>|.
+    file_string = |{ file_string }</testDataFolder>|.
 
-    download( i_filename = to_file
-              i_string   = file_string ).
+    file_string = upload( i_filename = from_file ).
 
   ENDMETHOD.
 
-  METHOD download.
+  METHOD upload.
 
-    DATA: l_length   TYPE i,
-          lt_string  TYPE TABLE OF string,
-          l_filename TYPE string.
-
-    APPEND i_string TO lt_string.
-
-    l_filename = i_filename.
-
-    CALL METHOD cl_gui_frontend_services=>gui_download
-      EXPORTING
-        filename = l_filename
-        filetype = 'ASC' "#EC NOTEXT
-      CHANGING
-        data_tab = lt_string
-      EXCEPTIONS
-        OTHERS   = 17.
+*    DATA: l_length   TYPE i,
+*          lt_string  TYPE TABLE OF string,
+*          l_filename TYPE string.
+*
+*    APPEND i_string TO lt_string.
+*
+*    l_filename = i_filename.
+*
+*    CALL METHOD cl_gui_frontend_services=>gui_download
+*      EXPORTING
+*        filename = l_filename
+*        filetype = 'ASC' "#EC NOTEXT
+*      CHANGING
+*        data_tab = lt_string
+*      EXCEPTIONS
+*        OTHERS   = 17.
 
   ENDMETHOD.
 
@@ -153,14 +134,14 @@ DATA: fm_name TYPE tfdir-funcname,
 
 SELECT-OPTIONS fm_names FOR fm_name DEFAULT 'STRING_REVERSE'.
 SELECT-OPTIONS nummers FOR nummer DEFAULT 1 TO 99.
-PARAMETERS to_file TYPE string DEFAULT 'C:\temp\testdata.xml' LOWER CASE.
+PARAMETERS file TYPE string DEFAULT 'C:\temp\testdata.xml' LOWER CASE.
 
 START-OF-SELECTION.
   TRY.
       NEW lcl_app(
+        from_file  = file
         fm_names = fm_names[]
         nummers  = nummers[]
-        to_file  = to_file
         )->main( ).
     CATCH zcx_fm_test_data INTO DATA(lx_fm_test_data).
       MESSAGE lx_fm_test_data TYPE 'I' DISPLAY LIKE 'E'.

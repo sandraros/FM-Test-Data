@@ -5,7 +5,7 @@ CLASS zcl_fm_test_data_apack DEFINITION
 
   PUBLIC SECTION.
 
-    INTERFACES zif_apack_manifest.
+    INTERFACES if_apack_manifest.
 
     METHODS: constructor.
 
@@ -18,7 +18,7 @@ ENDCLASS.
 CLASS zcl_fm_test_data_apack IMPLEMENTATION.
 
   METHOD constructor.
-    zif_apack_manifest~descriptor = VALUE #(
+    if_apack_manifest~descriptor = VALUE #(
         group_id     = 'github.com/sandraros'
         artifact_id  = 'FM-Test-Data'
         version      = '0.2'
