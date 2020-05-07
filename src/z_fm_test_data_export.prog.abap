@@ -8,12 +8,14 @@ REPORT z_fm_test_data_export.
 CLASS lcl_app DEFINITION.
   PUBLIC SECTION.
     TYPES: ty_fm_names TYPE RANGE OF tfdir-funcname,
-           ty_nummers  TYPE RANGE OF i.
+           ty_nummers  TYPE RANGE OF i,
+           ty_dates    TYPE RANGE OF sy-datum.
 
     METHODS constructor
       IMPORTING
         fm_names TYPE ty_fm_names
         nummers  TYPE ty_nummers
+        dates    TYPE ty_dates
         to_file  TYPE csequence.
 
     METHODS main
@@ -27,6 +29,7 @@ CLASS lcl_app DEFINITION.
 
     DATA: fm_names TYPE ty_fm_names READ-ONLY,
           nummers  TYPE ty_nummers READ-ONLY,
+          dates    TYPE ty_dates READ-ONLY,
           to_file  TYPE string READ-ONLY.
 
 ENDCLASS.
@@ -37,6 +40,7 @@ CLASS lcl_app IMPLEMENTATION.
 
     me->fm_names = fm_names.
     me->nummers = nummers.
+    me->dates = dates.
     me->to_file = to_file.
 
   ENDMETHOD.
@@ -54,6 +58,8 @@ CLASS lcl_app IMPLEMENTATION.
     WHERE name   IN @fm_names
       AND nummer IN @nummers
       AND nummer <> '999'
+      AND seqid  =  ' ' " Don't extract test sequences
+      AND datum  IN @dates
     INTO TABLE @DATA(eufunc_s).
 
     DATA(file_string) = |<?xml version="1.0"?><testDataRepository>|.
@@ -65,6 +71,7 @@ CLASS lcl_app IMPLEMENTATION.
 
       zcl_fm_test_data=>load(
         EXPORTING
+          fugr_name      = CONV #( eufunc->gruppe )
           fm_name        = eufunc->name
           test_id        = CONV decfloat34( eufunc->nummer )
         IMPORTING
@@ -149,10 +156,12 @@ CLASS lcl_app IMPLEMENTATION.
 ENDCLASS.
 
 DATA: fm_name TYPE tfdir-funcname,
-      nummer  TYPE i.
+      nummer  TYPE i,
+      date    TYPE sy-datum.
 
 SELECT-OPTIONS fm_names FOR fm_name DEFAULT 'STRING_REVERSE'.
 SELECT-OPTIONS nummers FOR nummer DEFAULT 1 TO 99.
+SELECT-OPTIONS dates FOR date.
 PARAMETERS to_file TYPE string DEFAULT 'C:\temp\testdata.xml' LOWER CASE.
 
 START-OF-SELECTION.
@@ -160,6 +169,7 @@ START-OF-SELECTION.
       NEW lcl_app(
         fm_names = fm_names[]
         nummers  = nummers[]
+        dates  = dates[]
         to_file  = to_file
         )->main( ).
     CATCH zcx_fm_test_data INTO DATA(lx_fm_test_data).

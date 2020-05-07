@@ -111,6 +111,8 @@ CLASS zcl_fm_test_data DEFINITION
       RAISING
         zcx_fm_test_data.
 
+    "! NB: LOAD supports the fact that the function module does not exist anymore, or
+    "! has been moved to another function group since then.
     "! <p class="shorttext synchronized" lang="en"></p>
     "!
     "! @parameter fm_name | <p class="shorttext synchronized" lang="en">Name of function module</p>
@@ -123,6 +125,7 @@ CLASS zcl_fm_test_data DEFINITION
     "!      | Values of parameters returned after the function module call
     CLASS-METHODS load
       IMPORTING
+        VALUE(fugr_name)   TYPE tlibg-area OPTIONAL
         fm_name            TYPE tfdir-funcname
         test_id            TYPE numeric
       EXPORTING
@@ -612,9 +615,13 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
       <cpar_value>          TYPE any,
       <param_binding_value> TYPE any.
 
-    DATA(fugr_name) = get_fugr_name( fm_name ).
+
+    IF fugr_name IS INITIAL.
+      fugr_name = get_fugr_name( fm_name ).
+    ENDIF.
+
     " DATAID: number formatted like I = right-aligned and sign character at rightmost position
-    data(dataid) = CONV eufunc-nummer( CONV i( test_id ) ).
+    DATA(dataid) = CONV eufunc-nummer( CONV i( test_id ) ).
 
     TRY.
         DATA(eufunc) = VALUE eufunc( ).
@@ -660,67 +667,77 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
            OR name = 'VEXCEPTION'
            OR name = 'G_UPPER'.
 
-    DATA(params_rtts) = get_fm_params_rtts( funcname = fm_name ).
+*    DATA(params_rtts) = get_fm_params_rtts( funcname = fm_name ).
 
     SORT tab_cpar BY name.
 
-    LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
+    LOOP AT tab_cpar REFERENCE INTO cpar WHERE name CP '%_+*'.
 
-      IF param_rtts->call_function_kind <> abap_func_importing.
-        parameter_name = '%_I' && param_rtts->name.
-        READ TABLE tab_cpar WITH KEY name = parameter_name REFERENCE INTO cpar.
-        IF sy-subrc = 0.
-          ASSIGN param_bindings_pbo[
-                  kind = param_rtts->call_function_kind
-                  name = param_rtts->name ]
-              TO <param_binding>.
-          IF sy-subrc <> 0.
-            ASSIGN param_bindings_pbo[
-                    kind = 0
-                    name = param_rtts->name ]
-                TO <param_binding>.
-          ENDIF.
-          IF sy-subrc = 0.
-            ASSIGN cpar->dref->* TO <cpar_value>.
-            ASSIGN <param_binding>-value->* TO <param_binding_value>.
-            <param_binding_value> = <cpar_value>.
-          ELSE.
-            INSERT VALUE abap_func_parmbind( kind = param_rtts->call_function_kind name = param_rtts->name )
-                INTO TABLE param_bindings_pbo
-                ASSIGNING <param_binding>.
-            <param_binding>-value = cpar->dref.
-          ENDIF.
-        ENDIF.
-      ENDIF.
-
-      IF param_rtts->call_function_kind <> abap_func_exporting.
-        parameter_name = '%_V' && param_rtts->name.
-        READ TABLE tab_cpar WITH KEY name = parameter_name REFERENCE INTO cpar.
-        IF sy-subrc = 0.
-          ASSIGN param_bindings_pai[
-                  kind = param_rtts->call_function_kind
-                  name = param_rtts->name ]
-              TO <param_binding>.
-          IF sy-subrc <> 0.
-            ASSIGN param_bindings_pai[
-                    kind = 0
-                    name = param_rtts->name ]
-                TO <param_binding>.
-          ENDIF.
-          IF sy-subrc = 0.
-            ASSIGN cpar->dref->* TO <cpar_value>.
-            ASSIGN <param_binding>-value->* TO <param_binding_value>.
-            <param_binding_value> = <cpar_value>.
-          ELSE.
-            INSERT VALUE abap_func_parmbind( kind = param_rtts->call_function_kind name = param_rtts->name )
-                INTO TABLE param_bindings_pai
-                ASSIGNING <param_binding>.
-            <param_binding>-value = cpar->dref.
-          ENDIF.
-        ENDIF.
-      ENDIF.
+       INSERT VALUE abap_func_parmbind(
+               kind  = SWITCH #( cpar->name(3) WHEN '%_I' THEN '' )
+               name  = cpar->name+3
+               value = cpar->dref )
+           INTO TABLE param_bindings_pbo.
 
     ENDLOOP.
+
+*    LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
+*
+*      IF param_rtts->call_function_kind <> abap_func_importing.
+*        parameter_name = '%_I' && param_rtts->name.
+*        READ TABLE tab_cpar WITH KEY name = parameter_name REFERENCE INTO cpar.
+*        IF sy-subrc = 0.
+*          ASSIGN param_bindings_pbo[
+*                  kind = param_rtts->call_function_kind
+*                  name = param_rtts->name ]
+*              TO <param_binding>.
+*          IF sy-subrc <> 0.
+*            ASSIGN param_bindings_pbo[
+*                    kind = 0
+*                    name = param_rtts->name ]
+*                TO <param_binding>.
+*          ENDIF.
+*          IF sy-subrc = 0.
+*            ASSIGN cpar->dref->* TO <cpar_value>.
+*            ASSIGN <param_binding>-value->* TO <param_binding_value>.
+*            <param_binding_value> = <cpar_value>.
+*          ELSE.
+*            INSERT VALUE abap_func_parmbind( kind = param_rtts->call_function_kind name = param_rtts->name )
+*                INTO TABLE param_bindings_pbo
+*                ASSIGNING <param_binding>.
+*            <param_binding>-value = cpar->dref.
+*          ENDIF.
+*        ENDIF.
+*      ENDIF.
+*
+*      IF param_rtts->call_function_kind <> abap_func_exporting.
+*        parameter_name = '%_V' && param_rtts->name.
+*        READ TABLE tab_cpar WITH KEY name = parameter_name REFERENCE INTO cpar.
+*        IF sy-subrc = 0.
+*          ASSIGN param_bindings_pai[
+*                  kind = param_rtts->call_function_kind
+*                  name = param_rtts->name ]
+*              TO <param_binding>.
+*          IF sy-subrc <> 0.
+*            ASSIGN param_bindings_pai[
+*                    kind = 0
+*                    name = param_rtts->name ]
+*                TO <param_binding>.
+*          ENDIF.
+*          IF sy-subrc = 0.
+*            ASSIGN cpar->dref->* TO <cpar_value>.
+*            ASSIGN <param_binding>-value->* TO <param_binding_value>.
+*            <param_binding_value> = <cpar_value>.
+*          ELSE.
+*            INSERT VALUE abap_func_parmbind( kind = param_rtts->call_function_kind name = param_rtts->name )
+*                INTO TABLE param_bindings_pai
+*                ASSIGNING <param_binding>.
+*            <param_binding>-value = cpar->dref.
+*          ENDIF.
+*        ENDIF.
+*      ENDIF.
+*
+*    ENDLOOP.
 
 
     TRY.
