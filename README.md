@@ -1,5 +1,18 @@
 # FM-Test-Data
-Utility to read and save Function Module Test Data
+Utility class `ZCL_FM_TEST_DATA` to read and save Function Module Test Data
+
+Four methods are proposed:
+- `LOAD`
+  - Input:
+    - Function module name
+    - Test ID
+  - Output:
+    - param_bindings_pbo : Values of arguments passed to the function module (call)
+    - param_bindings_pai : Values of parameters returned after the function module call
+  - NB: it's allowed that the function module does not exist anymore, or it has been moved to another function group.
+- `CREATE_WITHOUT_EXECUTION`
+- `EXECUTE_AND_CREATE`
+- `DELETE`
 
 Example program (of type "executable") to duplicate test data in the same function module:
 ```
@@ -40,3 +53,7 @@ START-OF-SELECTION.
       RETURN.
   ENDTRY.
 ```
+
+Dependencies:
+- https://github.com/sandraros/Export-Import-Tables.git
+- https://github.com/sandraros/FM-params-RTTS.git
