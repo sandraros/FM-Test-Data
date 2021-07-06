@@ -196,6 +196,10 @@ CLASS zcl_fm_test_data DEFINITION
         struc_info_table_copy TYPE nf2ty_struc_info_table
         fdesc2                TYPE ty_fdesc.
 
+    "! <p class="shorttext synchronized" lang="en"></p>
+    "!
+    "! @parameter fm_name | <p class="shorttext synchronized" lang="en"></p>
+    "! @parameter fugr_name | <p class="shorttext synchronized" lang="en">Function group or empty if the function module doesn't exist</p>
     CLASS-METHODS get_fugr_name
       IMPORTING
         fm_name          TYPE tfdir-funcname
@@ -623,6 +627,28 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
     " DATAID: number formatted like I = right-aligned and sign character at rightmost position
     DATA(dataid) = CONV eufunc-nummer( CONV i( test_id ) ).
 
+    IF fugr_name IS NOT INITIAL.
+      SELECT COUNT(*) FROM eufunc
+          WHERE relid  = 'FL'
+            AND gruppe = @fugr_name
+            AND name   = @fm_name
+            AND nummer = @dataid.
+      IF sy-subrc <> 0.
+        CLEAR fugr_name.
+      ENDIF.
+    ENDIF.
+
+    IF fugr_name IS INITIAL.
+      SELECT SINGLE gruppe FROM eufunc
+          WHERE relid  = 'FL'
+            AND name   = @fm_name
+            AND nummer = @dataid
+          INTO @fugr_name.
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE zcx_fm_test_data.
+      ENDIF.
+    ENDIF.
+
     TRY.
         DATA(eufunc) = VALUE eufunc( ).
         zcl_expimp_table=>import_all(
@@ -673,11 +699,11 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 
     LOOP AT tab_cpar REFERENCE INTO cpar WHERE name CP '%_+*'.
 
-       INSERT VALUE abap_func_parmbind(
-               kind  = SWITCH #( cpar->name(3) WHEN '%_I' THEN '' )
-               name  = cpar->name+3
-               value = cpar->dref )
-           INTO TABLE param_bindings_pbo.
+      INSERT VALUE abap_func_parmbind(
+              kind  = SWITCH #( cpar->name(3) WHEN '%_I' THEN '' )
+              name  = cpar->name+3
+              value = cpar->dref )
+          INTO TABLE param_bindings_pbo.
 
     ENDLOOP.
 
