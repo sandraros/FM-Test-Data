@@ -177,14 +177,18 @@ CLASS lcl_app IMPLEMENTATION.
         name    = fm_name
         nummer  = nummer ).
 
-    zcl_expimp_table=>import_all(
-      EXPORTING
-        table_name = 'EUFUNC'
-        area       = 'FL'
-      IMPORTING
-        tab_cpar   = DATA(tab_cpar)
-      CHANGING
-        id_wa      = eufunc ).
+    TRY.
+        zcl_expimp_table=>import_all(
+          EXPORTING
+            tabname  = 'EUFUNC'
+            area     = 'FL'
+          IMPORTING
+            tab_cpar = DATA(tab_cpar)
+            wa       = eufunc ).
+      CATCH zcx_expimp_table INTO DATA(lx).
+        MESSAGE lx TYPE 'I' DISPLAY LIKE 'E'.
+        RETURN.
+    ENDTRY.
 
     TRY.
         CALL TRANSFORMATION id
@@ -197,6 +201,8 @@ CLASS lcl_app IMPLEMENTATION.
                 technical_types = 'ignore'
                 initial_components = 'suppress'.
       CATCH cx_transformation_error INTO DATA(lx_transformation_error).
+        MESSAGE lx TYPE 'I' DISPLAY LIKE 'E'.
+        RETURN.
     ENDTRY.
 
     cl_demo_output=>display_xml( xstring ).
