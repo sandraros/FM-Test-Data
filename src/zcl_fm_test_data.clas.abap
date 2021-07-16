@@ -2,78 +2,82 @@
 CLASS zcl_fm_test_data DEFINITION
   PUBLIC
   FINAL
-  CREATE PRIVATE.
+  CREATE PRIVATE .
 
   PUBLIC SECTION.
 
-    TYPES: BEGIN OF ty_datadir_entry,
-             dataid TYPE eufunc-nummer,    "Schlüsselnr. für Testdatenimp.
-             "! <ul>
-             "! <li>PBO: Test data contains only parameter values before call</li>
-             "! <li>PAI: Test data contains parameter values before and after call</li>
-             "! </ul>
-             stepid TYPE c LENGTH 3,
-             "! <ul>
-             "! <li>' ': Not a test sequence</li>
-             "! <li>'S': Test sequence (not supported by ZCL_FM_TEST_DATA)</li>
-             "! </ul>
-             seqid  TYPE eufunc-seqid,
-             datum  TYPE sy-datum,
-             uzeit  TYPE sy-uzeit,
-             title  TYPE c LENGTH 40,
-           END OF ty_datadir_entry,
-           ty_datadir TYPE STANDARD TABLE OF ty_datadir_entry WITH EMPTY KEY,
-
-           BEGIN OF ty_fdesc_entry,
-             "! Field name
-             name    TYPE c LENGTH 30,
-             "! Table name
-             table   TYPE c LENGTH 40,
-             "! Data type
-             type    TYPE c LENGTH 1,
-             "! Length
-             length  TYPE c LENGTH 5,
-             "! Input length
-             ilength TYPE c LENGTH 5,
-             "! Input length
-             hlength TYPE p LENGTH 8 DECIMALS 0,
-             "! Parameter type<ul>
-             "! <li>I: IMPORT</li>
-             "! <li>E: EXPORT</li>
-             "! <li>C: CHANGING </li>
-             "! <li>S: STRUCTURE</li>
-             "! <li>Y: TYPE</li>
-             "! <li>T: TABLE</li>
-             "! </ul>
-             ftype   TYPE c LENGTH 3,
-             "! Reference, wessen Struktur
-             number  TYPE i,
-           END OF ty_fdesc_entry,
-           ty_fdesc TYPE STANDARD TABLE OF ty_fdesc_entry WITH EMPTY KEY,
-
-           BEGIN OF ty_fdesc_copy_entry,
-             line TYPE ty_fdesc_entry,
-           END OF ty_fdesc_copy_entry,
-           ty_fdesc_copy TYPE STANDARD TABLE OF ty_fdesc_copy_entry WITH EMPTY KEY,
-
-           BEGIN OF ty_test_attr,
-             "! Author
-             author         TYPE syuname,
-             "! Date
-             datum          TYPE d,
-             "! Time
-             zeit           TYPE t,
-             "! Version
-             version        TYPE c LENGTH 4,
-             "! Duration in microseconds (TIME1)
-             duration       TYPE p LENGTH 8 DECIMALS 0,
-             "! Return code (V_RC)
-             rc             TYPE i,
-             "! Exception name (VEXCEPTION)
-             exception_name TYPE c LENGTH 30,
-             "! Upper case (G_UPPER)
-             lower_case     TYPE c LENGTH 1,
-           END OF ty_test_attr.
+    TYPES:
+      BEGIN OF ty_datadir_entry,
+        dataid TYPE eufunc-nummer,    "Schlüsselnr. für Testdatenimp.
+        "! <ul>
+        "! <li>PBO: Test data contains only parameter values before call</li>
+        "! <li>PAI: Test data contains parameter values before and after call</li>
+        "! </ul>
+        stepid TYPE c LENGTH 3,
+        "! <ul>
+        "! <li>' ': Not a test sequence</li>
+        "! <li>'S': Test sequence (not supported by ZCL_FM_TEST_DATA)</li>
+        "! </ul>
+        seqid  TYPE eufunc-seqid,
+        datum  TYPE sy-datum,
+        uzeit  TYPE sy-uzeit,
+        title  TYPE c LENGTH 40,
+      END OF ty_datadir_entry .
+    TYPES:
+      ty_datadir TYPE STANDARD TABLE OF ty_datadir_entry WITH EMPTY KEY .
+    TYPES:
+      BEGIN OF ty_fdesc_entry,
+        "! Field name
+        name    TYPE c LENGTH 30,
+        "! Table name
+        table   TYPE c LENGTH 40,
+        "! Data type
+        type    TYPE c LENGTH 1,
+        "! Length
+        length  TYPE c LENGTH 5,
+        "! Input length
+        ilength TYPE c LENGTH 5,
+        "! Input length
+        hlength TYPE p LENGTH 8 DECIMALS 0,
+        "! Parameter type<ul>
+        "! <li>I: IMPORT</li>
+        "! <li>E: EXPORT</li>
+        "! <li>C: CHANGING </li>
+        "! <li>S: STRUCTURE</li>
+        "! <li>Y: TYPE</li>
+        "! <li>T: TABLE</li>
+        "! </ul>
+        ftype   TYPE c LENGTH 3,
+        "! Reference, wessen Struktur
+        number  TYPE i,
+      END OF ty_fdesc_entry .
+    TYPES:
+      ty_fdesc TYPE STANDARD TABLE OF ty_fdesc_entry WITH EMPTY KEY .
+    TYPES:
+      BEGIN OF ty_fdesc_copy_entry,
+        line TYPE ty_fdesc_entry,
+      END OF ty_fdesc_copy_entry .
+    TYPES:
+      ty_fdesc_copy TYPE STANDARD TABLE OF ty_fdesc_copy_entry WITH EMPTY KEY .
+    TYPES:
+      BEGIN OF ty_test_attr,
+        "! Author
+        author         TYPE syuname,
+        "! Date
+        datum          TYPE d,
+        "! Time
+        zeit           TYPE t,
+        "! Version
+        version        TYPE c LENGTH 4,
+        "! Duration in microseconds (TIME1)
+        duration       TYPE p LENGTH 8 DECIMALS 0,
+        "! Return code (V_RC)
+        rc             TYPE i,
+        "! Exception name (VEXCEPTION)
+        exception_name TYPE c LENGTH 30,
+        "! Upper case (G_UPPER)
+        lower_case     TYPE c LENGTH 1,
+      END OF ty_test_attr .
 
     "! <p class="shorttext synchronized" lang="en"></p>
     "!
@@ -81,42 +85,40 @@ CLASS zcl_fm_test_data DEFINITION
     "! @parameter title | <p class="shorttext synchronized" lang="en">Title of test data</p>
     "! @parameter param_bindings | <p class="shorttext synchronized" lang="en"></p>
     "! @parameter lower_case | <p class="shorttext synchronized" lang="en"></p>
-    "! @parameter test_id | <p class="shorttext synchronized" lang="en">ID of the test data created</p>
+    "! @parameter test_data_id | <p class="shorttext synchronized" lang="en">ID of the test data created</p>
     CLASS-METHODS create_without_execution
       IMPORTING
-        fm_name        TYPE tfdir-funcname
-        title          TYPE ty_datadir_entry-title
-        param_bindings TYPE abap_func_parmbind_tab
-        lower_case     TYPE abap_bool OPTIONAL
+        !fm_name            TYPE tfdir-funcname
+        !title              TYPE ty_datadir_entry-title
+        !param_bindings     TYPE abap_func_parmbind_tab
+        !lower_case         TYPE abap_bool OPTIONAL
       RETURNING
-        VALUE(test_id) TYPE eufunc-nummer
+        VALUE(test_data_id) TYPE eufunc-nummer
       RAISING
-        zcx_fm_test_data.
-
+        zcx_fm_test_data .
     "! <p class="shorttext synchronized" lang="en"></p>
     "!
     "! @parameter fm_name | <p class="shorttext synchronized" lang="en">Name of function module</p>
     "! @parameter title | <p class="shorttext synchronized" lang="en">Title of test data</p>
     "! @parameter param_bindings | <p class="shorttext synchronized" lang="en"></p>
     "! @parameter lower_case | <p class="shorttext synchronized" lang="en"></p>
-    "! @parameter test_id | <p class="shorttext synchronized" lang="en">ID of the test data created</p>
+    "! @parameter test_data_id | <p class="shorttext synchronized" lang="en">ID of the test data created</p>
     CLASS-METHODS execute_and_create
       IMPORTING
-        fm_name        TYPE tfdir-funcname
-        title          TYPE ty_datadir_entry-title
-        param_bindings TYPE abap_func_parmbind_tab
-        lower_case     TYPE abap_bool OPTIONAL
+        !fm_name            TYPE tfdir-funcname
+        !title              TYPE ty_datadir_entry-title
+        !param_bindings     TYPE abap_func_parmbind_tab
+        !lower_case         TYPE abap_bool OPTIONAL
       RETURNING
-        VALUE(test_id) TYPE eufunc-nummer
+        VALUE(test_data_id) TYPE eufunc-nummer
       RAISING
-        zcx_fm_test_data.
-
+        zcx_fm_test_data .
     "! NB: LOAD supports the fact that the function module does not exist anymore, or
     "! has been moved to another function group since then.
     "! <p class="shorttext synchronized" lang="en"></p>
     "!
     "! @parameter fm_name | <p class="shorttext synchronized" lang="en">Name of function module</p>
-    "! @parameter test_id | <p class="shorttext synchronized" lang="en">ID of the test data</p>
+    "! @parameter test_data_id | <p class="shorttext synchronized" lang="en">ID of the test data created</p>
     "! @parameter datadir_entry | <p class="shorttext synchronized" lang="en"></p>
     "! @parameter attributes | <p class="shorttext synchronized" lang="en"></p>
     "! @parameter param_bindings_pbo | <p class="shorttext synchronized" lang="en"></p>
@@ -125,28 +127,32 @@ CLASS zcl_fm_test_data DEFINITION
     "!      | Values of parameters returned after the function module call
     CLASS-METHODS load
       IMPORTING
-        VALUE(fugr_name)   TYPE tlibg-area OPTIONAL
-        fm_name            TYPE tfdir-funcname
-        test_id            TYPE numeric
+        VALUE(fugr_name)    TYPE tlibg-area OPTIONAL
+        !fm_name            TYPE tfdir-funcname
+        !test_data_id       TYPE numeric
       EXPORTING
-        datadir_entry      TYPE ty_datadir_entry
-        attributes         TYPE ty_test_attr
+        !datadir_entry      TYPE ty_datadir_entry
+        !attributes         TYPE ty_test_attr
       CHANGING
-        param_bindings_pbo TYPE abap_func_parmbind_tab OPTIONAL
-        param_bindings_pai TYPE abap_func_parmbind_tab OPTIONAL
+        !param_bindings_pbo TYPE abap_func_parmbind_tab OPTIONAL
+        !param_bindings_pai TYPE abap_func_parmbind_tab OPTIONAL
       RAISING
-        zcx_fm_test_data.
-
+        zcx_fm_test_data .
     "! <p class="shorttext synchronized" lang="en"></p>
     "!
     "! @parameter fm_name | <p class="shorttext synchronized" lang="en">Name of function module</p>
-    "! @parameter test_id | <p class="shorttext synchronized" lang="en"></p>
+    "! @parameter test_data_id | <p class="shorttext synchronized" lang="en">ID of the test data created</p>
     CLASS-METHODS delete
       IMPORTING
-        fm_name TYPE tfdir-funcname
-        test_id TYPE numeric
+        !fm_name      TYPE tfdir-funcname
+        !test_data_id TYPE numeric
       RAISING
-        zcx_fm_test_data.
+        zcx_fm_test_data .
+
+    CLASS-METHODS f4_help_test_data_id
+      IMPORTING
+        fm_field_name           TYPE csequence
+        test_data_id_field_name TYPE csequence.
 
   PROTECTED SECTION.
 
@@ -206,23 +212,32 @@ CLASS zcl_fm_test_data DEFINITION
       RETURNING
         VALUE(fugr_name) TYPE eufunc-gruppe.
 
-    CLASS-METHODS get_free_test_id
+    CLASS-METHODS get_free_test_data_id
       IMPORTING
-        fm_name        TYPE tfdir-funcname
+        fm_name             TYPE tfdir-funcname
       RETURNING
-        VALUE(test_id) TYPE eufunc-nummer.
+        VALUE(test_data_id) TYPE eufunc-nummer.
 
     CLASS-METHODS save
       IMPORTING
-        fm_name            TYPE tfdir-funcname
-        title              TYPE ty_datadir_entry-title
-        stepid             TYPE ty_datadir_entry-stepid
-        new_param_bindings TYPE abap_func_parmbind_tab
-        param_bindings_pbo TYPE abap_func_parmbind_tab
-        attributes         TYPE ty_test_attr
+        fm_name             TYPE tfdir-funcname
+        title               TYPE ty_datadir_entry-title
+        stepid              TYPE ty_datadir_entry-stepid
+        new_param_bindings  TYPE abap_func_parmbind_tab
+        param_bindings_pbo  TYPE abap_func_parmbind_tab
+        attributes          TYPE ty_test_attr
+      RETURNING
+        VALUE(test_data_id) TYPE eufunc-nummer
       RAISING
         zcx_fm_test_data.
 
+    "! Receives PARAM_BINDINGS = table of values of function module parameters, except those in the
+    "!   FM signature which are of category Exporting. Parameters to which initial values are to be
+    "!   passed don't need to be defined in the table.
+    "! Returns:
+    "!   1) NEW_PARAM_BINDINGS = the lines from PARAM_BINDINGS + all missing parameters of the
+    "!      given function module, whatever their categories (Importing, Exporting, Changing, Tables).
+    "!   2) PARAM_BINDINGS_PBO =
     CLASS-METHODS complete_param_bindings
       IMPORTING
         fm_name            TYPE tfdir-funcname
@@ -248,40 +263,48 @@ ENDCLASS.
 
 
 
-CLASS zcl_fm_test_data IMPLEMENTATION.
+CLASS ZCL_FM_TEST_DATA IMPLEMENTATION.
 
 
   METHOD complete_param_bindings.
 
     DATA: ref_parameter     TYPE REF TO data,
           ref_parameter_pbo TYPE REF TO data.
+    FIELD-SYMBOLS:
+      <param_binding> TYPE abap_func_parmbind.
 
     DATA(params_rtts) = get_fm_params_rtts( funcname = fm_name ).
 
     new_param_bindings = VALUE #( ).
     param_bindings_pbo = VALUE #( ).
+
     LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
+
+      UNASSIGN <param_binding>.
+      IF param_rtts->call_function_kind <> abap_func_importing.
+        ASSIGN param_bindings[ name = param_rtts->name ] TO <param_binding>.
+        IF sy-subrc = 0 AND <param_binding>-value IS BOUND.
+          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
+                ( <param_binding> ) ).
+        ELSE.
+          CREATE DATA ref_parameter_pbo TYPE HANDLE param_rtts->type.
+          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
+                ( name  = param_rtts->name
+                  value = ref_parameter_pbo ) ).
+        ENDIF.
+      ENDIF.
+
       CREATE DATA ref_parameter TYPE HANDLE param_rtts->type.
+      IF stepid = 'PAI' AND <param_binding> IS ASSIGNED AND param_rtts->call_function_kind <> abap_func_importing.
+        ASSIGN <param_binding>-value->* TO FIELD-SYMBOL(<input_parameter>).
+        ASSIGN ref_parameter->* TO FIELD-SYMBOL(<parameter_value>).
+        <parameter_value> = <input_parameter>.
+      ENDIF.
       new_param_bindings = VALUE #( BASE new_param_bindings
           ( name  = param_rtts->name
             kind  = param_rtts->call_function_kind
             value = ref_parameter ) ).
-      IF param_rtts->call_function_kind <> abap_func_importing.
-        ASSIGN param_bindings[ name = param_rtts->name ] TO FIELD-SYMBOL(<param_binding>).
-        IF sy-subrc = 0.
-          IF stepid = 'PAI'.
-            ASSIGN <param_binding>-value->* TO FIELD-SYMBOL(<input_parameter>).
-            ASSIGN ref_parameter->* TO FIELD-SYMBOL(<parameter_value>).
-            <parameter_value> = <input_parameter>.
-          ENDIF.
-          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
-                ( name = param_rtts->name value = <param_binding>-value ) ).
-        ELSE.
-          CREATE DATA ref_parameter_pbo TYPE HANDLE param_rtts->type.
-          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
-                ( name = param_rtts->name value = ref_parameter_pbo ) ).
-        ENDIF.
-      ENDIF.
+
     ENDLOOP.
 
   ENDMETHOD.
@@ -298,12 +321,13 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
         new_param_bindings = DATA(new_param_bindings)
         param_bindings_pbo = DATA(param_bindings_pbo) ).
 
-    save( fm_name            = fm_name
-          title              = title
-          stepid             = 'PBO'
-          new_param_bindings = new_param_bindings
-          param_bindings_pbo = param_bindings_pbo
-          attributes         = VALUE #( lower_case = lower_case ) ).
+    test_data_id = save(
+                    fm_name            = fm_name
+                    title              = title
+                    stepid             = 'PBO'
+                    new_param_bindings = new_param_bindings
+                    param_bindings_pbo = param_bindings_pbo
+                    attributes         = VALUE #( lower_case = lower_case ) ).
 
   ENDMETHOD.
 
@@ -312,7 +336,7 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 
     DATA(context) = load_test_context( fm_name ).
 
-    DELETE context-te_datadir WHERE dataid = test_id.
+    DELETE context-te_datadir WHERE dataid = test_data_id.
 
     save_test_context( fm_name = fm_name context = context ).
 
@@ -321,7 +345,7 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
         WHERE relid   = 'FL'
           AND gruppe  = fugr_name
           AND name    = fm_name
-          AND nummer  = test_id.
+          AND nummer  = test_data_id.
 
   ENDMETHOD.
 
@@ -379,7 +403,85 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
   ENDMETHOD.
 
 
-  METHOD get_free_test_id.
+  METHOD f4_help_test_data_id.
+
+    TYPES: tt_datadir TYPE STANDARD TABLE OF eudatadir WITH EMPTY KEY.
+
+    DATA(lt_dynpfield) = VALUE dynpread_tabtype( ( fieldname = fm_field_name ) ).
+    CALL FUNCTION 'DYNP_VALUES_READ'
+      EXPORTING
+        dyname     = sy-repid
+        dynumb     = sy-dynnr
+      TABLES
+        dynpfields = lt_dynpfield
+      EXCEPTIONS
+        OTHERS     = 9.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    DATA(lt_datadir) = VALUE tt_datadir( ).
+    CALL FUNCTION 'RS_TESTDATA_DIRECTORY_GET'
+      EXPORTING
+        functionname       = CONV rs38l-name( lt_dynpfield[ fieldname = fm_field_name ]-fieldvalue )
+      TABLES
+        te_datadir         = lt_datadir
+      EXCEPTIONS
+        function_not_found = 1
+        no_data            = 2
+        OTHERS             = 3.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+
+    CALL FUNCTION 'F4IF_INT_TABLE_VALUE_REQUEST'
+      EXPORTING
+        dynpprog    = sy-repid
+        dynpnr      = sy-dynnr
+        dynprofield = test_data_id_field_name
+        retfield    = 'NUMMER' " column name in VALUE_TAB
+        value_org   = 'S'
+      TABLES
+        value_tab   = lt_datadir.
+
+  ENDMETHOD.
+
+
+  METHOD get_fm_params_rtts.
+
+    TRY.
+        params_rtts = zcl_fm_params_rtts=>get( funcname = funcname ).
+      CATCH zcx_fm_params_rtts.
+        RAISE EXCEPTION TYPE zcx_fm_test_data.
+    ENDTRY.
+
+    " Replace generic types
+    LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
+      IF NOT param_rtts->type->is_instantiatable( ).
+        CASE param_rtts->type->type_kind.
+          WHEN cl_abap_typedescr=>typekind_char
+                OR cl_abap_typedescr=>typekind_clike
+                OR cl_abap_typedescr=>typekind_csequence
+                OR cl_abap_typedescr=>typekind_any.
+            param_rtts->type = cl_abap_elemdescr=>get_c( p_length = 200 ).
+          WHEN cl_abap_typedescr=>typekind_packed.
+            param_rtts->type = cl_abap_elemdescr=>get_p( p_length = 16 p_decimals = 0 ).
+          WHEN cl_abap_typedescr=>typekind_hex.
+            param_rtts->type = cl_abap_elemdescr=>get_x( p_length = 200 ).
+          WHEN cl_abap_typedescr=>typekind_num.
+            param_rtts->type = cl_abap_elemdescr=>get_n( p_length = 200 ).
+          WHEN cl_abap_typedescr=>typekind_decfloat.
+            param_rtts->type = cl_abap_elemdescr=>get_decfloat34( ).
+          WHEN OTHERS.
+            RAISE EXCEPTION TYPE zcx_fm_test_data.
+        ENDCASE.
+      ENDIF.
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+  METHOD get_free_test_data_id.
 
     " TODO simulate the standard, which looks for gaps between numbers.
 
@@ -393,10 +495,10 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
           AND gruppe = @fugr_name
           AND name   = @fm_name
           AND nummer <> '999'
-        INTO @test_id.
+        INTO @test_data_id.
 
-    DATA(test_id_p) = CONV ty_p( test_id + 1 ).
-    test_id = test_id_p.
+    DATA(test_data_id_p) = CONV ty_p( test_data_id + 1 ).
+    test_data_id = test_data_id_p.
 
   ENDMETHOD.
 
@@ -625,7 +727,7 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
     ENDIF.
 
     " DATAID: number formatted like I = right-aligned and sign character at rightmost position
-    DATA(dataid) = CONV eufunc-nummer( CONV i( test_id ) ).
+    DATA(dataid) = CONV eufunc-nummer( CONV i( test_data_id ) ).
 
     IF fugr_name IS NOT INITIAL.
       SELECT COUNT(*) FROM eufunc
@@ -846,7 +948,7 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 
     DATA(fugr_name) = get_fugr_name( fm_name ).
 
-    DATA(test_id) = get_free_test_id( fm_name ).
+    test_data_id = get_free_test_data_id( fm_name ).
 
     DATA(tab_cpar) = VALUE tab_cpar(
         ( LINES OF VALUE #(
@@ -876,15 +978,15 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
             tabname  = 'EUFUNC'
             area     = 'FL'
             id       = VALUE functdir(
-                area    = fugr_name
-                progid  = fm_name
-                dataid  = test_id )
+                        area    = fugr_name
+                        progid  = fm_name
+                        dataid  = test_data_id )
             wa       = VALUE eufunc(
-                langu   = ' '
-                autor   = sy-uname
-                datum   = sy-datum
-                zeit    = sy-uzeit
-                version = '  1 ' )
+                        langu   = ' '
+                        autor   = sy-uname
+                        datum   = sy-datum
+                        zeit    = sy-uzeit
+                        version = '  1 ' )
             tab_cpar = tab_cpar ).
       CATCH zcx_expimp_table.
         RAISE EXCEPTION TYPE zcx_fm_test_data.
@@ -896,7 +998,7 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
     context-te_datadir = VALUE #(
         BASE context-te_datadir
         ( VALUE #(
-          dataid = test_id
+          dataid = test_data_id
           stepid = stepid
           seqid  = ''
           datum  = sy-datum
@@ -928,38 +1030,4 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
       ID d102n_exportkey.
 
   ENDMETHOD.
-
-  METHOD get_fm_params_rtts.
-
-    TRY.
-        params_rtts = zcl_fm_params_rtts=>get( funcname = funcname ).
-      CATCH zcx_fm_params_rtts.
-        RAISE EXCEPTION TYPE zcx_fm_test_data.
-    ENDTRY.
-
-    " Replace generic types
-    LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
-      IF NOT param_rtts->type->is_instantiatable( ).
-        CASE param_rtts->type->type_kind.
-          WHEN cl_abap_typedescr=>typekind_char
-                OR cl_abap_typedescr=>typekind_clike
-                OR cl_abap_typedescr=>typekind_csequence
-                OR cl_abap_typedescr=>typekind_any.
-            param_rtts->type = cl_abap_elemdescr=>get_c( p_length = 200 ).
-          WHEN cl_abap_typedescr=>typekind_packed.
-            param_rtts->type = cl_abap_elemdescr=>get_p( p_length = 16 p_decimals = 0 ).
-          WHEN cl_abap_typedescr=>typekind_hex.
-            param_rtts->type = cl_abap_elemdescr=>get_x( p_length = 200 ).
-          WHEN cl_abap_typedescr=>typekind_num.
-            param_rtts->type = cl_abap_elemdescr=>get_n( p_length = 200 ).
-          WHEN cl_abap_typedescr=>typekind_decfloat.
-            param_rtts->type = cl_abap_elemdescr=>get_decfloat34( ).
-          WHEN OTHERS.
-            RAISE EXCEPTION TYPE zcx_fm_test_data.
-        ENDCASE.
-      ENDIF.
-    ENDLOOP.
-
-  ENDMETHOD.
-
 ENDCLASS.

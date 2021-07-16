@@ -40,9 +40,13 @@ CLASS lcl_app DEFINITION.
       RAISING
         zcx_fm_test_data.
 
-    DATA: fm_name TYPE tfdir-funcname READ-ONLY,
-          nummer  TYPE i READ-ONLY,
-          option  TYPE i READ-ONLY.
+    DATA:
+      fm_name TYPE tfdir-funcname READ-ONLY,
+      nummer  TYPE i READ-ONLY,
+      option  TYPE i READ-ONLY.
+    CONSTANTS:
+      c_test_fm_name   TYPE tfdir-funcname VALUE 'Z_FM_TEST_DATA_TEST',
+      c_test_fm_name_2 TYPE tfdir-funcname VALUE 'Z_FM_TEST_DATA_TEST_2'.
 ENDCLASS.
 
 CLASS lcl_app IMPLEMENTATION.
@@ -80,9 +84,9 @@ CLASS lcl_app IMPLEMENTATION.
 
     TYPES ty_tables_ TYPE STANDARD TABLE OF sflight WITH EMPTY KEY.
 
-    zcl_fm_test_data=>create_without_execution(
+    DATA(test_data_id) = zcl_fm_test_data=>create_without_execution(
       EXPORTING
-        fm_name        = fm_name
+        fm_name        = c_test_fm_name
         title          = 'test data'
         param_bindings = VALUE #(
                       ( name = 'IMPORT'   value = NEW string( |AA| ) )
@@ -95,15 +99,17 @@ CLASS lcl_app IMPLEMENTATION.
 
     COMMIT WORK.
 
+    MESSAGE |Test data "{ condense( test_data_id ) }" created| TYPE 'I'.
+
   ENDMETHOD.
 
   METHOD execute_and_create.
-    DATA: param_bindings_pbo TYPE abap_func_parmbind_tab.
 
+    DATA(param_bindings_pbo) = VALUE abap_func_parmbind_tab( ).
     zcl_fm_test_data=>load(
       EXPORTING
         fm_name        = fm_name
-        test_id        = nummer
+        test_data_id   = nummer
       IMPORTING
         datadir_entry  = DATA(datadir_entry)
         attributes     = DATA(attributes)
@@ -126,8 +132,8 @@ CLASS lcl_app IMPLEMENTATION.
 
     zcl_fm_test_data=>load(
       EXPORTING
-        fm_name        = 'Z_FM_TEST_DATA_TEST'
-        test_id        = nummer
+        fm_name        = c_test_fm_name
+        test_data_id   = nummer
       IMPORTING
         datadir_entry  = DATA(datadir_entry)
         attributes     = DATA(attributes)
@@ -136,7 +142,7 @@ CLASS lcl_app IMPLEMENTATION.
 
     zcl_fm_test_data=>create_without_execution(
       EXPORTING
-        fm_name        = fm_name
+        fm_name        = c_test_fm_name_2
         title          = datadir_entry-title
         param_bindings = param_bindings_pbo ).
 
@@ -151,7 +157,7 @@ CLASS lcl_app IMPLEMENTATION.
     zcl_fm_test_data=>load(
       EXPORTING
         fm_name        = fm_name
-        test_id        = nummer
+        test_data_id   = nummer
       IMPORTING
         datadir_entry  = DATA(datadir_entry)
         attributes     = DATA(attributes)
@@ -217,7 +223,7 @@ CLASS lcl_app IMPLEMENTATION.
     zcl_fm_test_data=>load(
       EXPORTING
         fm_name            = fm_name
-        test_id            = nummer
+        test_data_id       = nummer
       IMPORTING
         datadir_entry      = DATA(datadir_entry)
         attributes         = DATA(attributes)
@@ -250,7 +256,7 @@ CLASS lcl_app IMPLEMENTATION.
     zcl_fm_test_data=>delete(
       EXPORTING
         fm_name = fm_name
-        test_id = nummer ).
+        test_data_id = nummer ).
 
     COMMIT WORK.
 
@@ -273,9 +279,6 @@ CLASS lcl_app IMPLEMENTATION.
              tables_  TYPE STANDARD TABLE OF sflight WITH EMPTY KEY,
            END OF ty_results.
 
-    DATA(from_fm_name) = CONV tfdir-funcname( 'Z_FM_TEST_DATA_TEST' ).
-    DATA(to_fm_name) = CONV tfdir-funcname( 'Z_FM_TEST_DATA_TEST_2' ).
-
     DATA(source) = VALUE ty_arguments( ).
     DATA(param_bindings_pbo) = VALUE abap_func_parmbind_tab(
           ( name = 'IMPORT'     value = REF #( source-import ) )
@@ -286,8 +289,8 @@ CLASS lcl_app IMPLEMENTATION.
 
     zcl_fm_test_data=>load(
       EXPORTING
-        fm_name       = from_fm_name
-        test_id       = nummer
+        fm_name       = c_test_fm_name
+        test_data_id  = nummer
       IMPORTING
         datadir_entry = DATA(datadir_entry)
         attributes    = DATA(attributes)
@@ -302,7 +305,7 @@ CLASS lcl_app IMPLEMENTATION.
 
     zcl_fm_test_data=>create_without_execution(
       EXPORTING
-        fm_name        = to_fm_name
+        fm_name        = c_test_fm_name_2
         title          = datadir_entry-title
         param_bindings = VALUE #(
           ( name = 'IMPORT'     value = REF #( results-import ) )
@@ -317,8 +320,11 @@ CLASS lcl_app IMPLEMENTATION.
 
 ENDCLASS.
 
+TABLES sscrfields.
+
 PARAMETERS fm_name TYPE tfdir-funcname DEFAULT 'Z_FM_TEST_DATA_TEST'.
-PARAMETERS nummer TYPE i DEFAULT 1.
+SELECTION-SCREEN PUSHBUTTON /1(20) txt_se37 USER-COMMAND se37.
+PARAMETERS nummer TYPE eudatadir-nummer.
 
 SELECTION-SCREEN BEGIN OF LINE.
 PARAMETERS opt0 RADIOBUTTON GROUP rb1 DEFAULT 'X'.
@@ -363,13 +369,28 @@ INITIALIZATION.
   txt_opt6 = 'Delete'.
   txt_opt7 = 'Copy from Z_FM_TEST_DATA_TEST to Z_FM_TEST_DATA_TEST_2'.
 
+  txt_se37 = 'Run SE37'(009).
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR nummer.
+  zcl_fm_test_data=>f4_help_test_data_id( fm_field_name = 'FM_NAME' test_data_id_field_name = 'NUMMER' ).
+
+AT SELECTION-SCREEN.
+  CASE sy-dynnr.
+    WHEN 1000.
+      CASE sscrfields-ucomm.
+        WHEN 'SE37'.
+          SET PARAMETER ID 'LIB' FIELD lcl_app=>c_test_fm_name.
+          CALL TRANSACTION 'SE37'.
+      ENDCASE.
+  ENDCASE.
+
 START-OF-SELECTION.
   DATA(options) = VALUE trext_c1( ( opt0 ) ( opt1 ) ( opt2 ) ( opt3 ) ( opt4 ) ( opt5 ) ( opt6 ) ( opt7 ) ).
   CONCATENATE LINES OF options INTO DATA(options2) RESPECTING BLANKS.
   TRY.
       NEW lcl_app(
         fm_name = fm_name
-        nummer  = nummer
+        nummer  = CONV #( nummer )
         option  = find( val = options2 sub = 'X' )
         )->main( ).
     CATCH zcx_fm_test_data INTO DATA(lx_fm_test_data).
