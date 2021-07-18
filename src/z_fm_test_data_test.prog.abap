@@ -7,36 +7,38 @@ REPORT z_fm_test_data_test.
 
 CLASS lcl_app DEFINITION.
   PUBLIC SECTION.
+
     METHODS constructor
       IMPORTING
         fm_name TYPE tfdir-funcname
         nummer  TYPE i
         option  TYPE i.
+
     METHODS main
       RAISING
         zcx_fm_test_data.
+
     METHODS create_without_execution
       RAISING
         zcx_fm_test_data.
+
     METHODS execute_and_create
       RAISING
         zcx_fm_test_data.
+
     METHODS copy_without_execution
       RAISING
         zcx_fm_test_data.
-    METHODS copy_execute_and_create
+
+    METHODS display
       RAISING
         zcx_fm_test_data.
-    METHODS import_all
-      RAISING
-        zcx_fm_test_data.
-    METHODS query
-      RAISING
-        zcx_fm_test_data.
+
     METHODS delete
       RAISING
         zcx_fm_test_data.
-    METHODS recovery
+
+    METHODS display_raw_internal_format
       RAISING
         zcx_fm_test_data.
 
@@ -45,8 +47,17 @@ CLASS lcl_app DEFINITION.
       nummer  TYPE i READ-ONLY,
       option  TYPE i READ-ONLY.
     CONSTANTS:
-      c_test_fm_name   TYPE tfdir-funcname VALUE 'Z_FM_TEST_DATA_TEST',
-      c_test_fm_name_2 TYPE tfdir-funcname VALUE 'Z_FM_TEST_DATA_TEST_2'.
+      c_test_fm_name   TYPE tfdir-funcname VALUE 'Z_FM_TEST_DATA_TEST'.
+
+  PRIVATE SECTION.
+
+    METHODS get_xml
+      IMPORTING
+        data_name  TYPE csequence
+        data_ref   TYPE REF TO data
+      RETURNING
+        VALUE(xml) TYPE string.
+
 ENDCLASS.
 
 CLASS lcl_app IMPLEMENTATION.
@@ -56,6 +67,7 @@ CLASS lcl_app IMPLEMENTATION.
     me->nummer = nummer.
     me->option = option.
   ENDMETHOD.
+
 
   METHOD main.
 
@@ -67,18 +79,15 @@ CLASS lcl_app IMPLEMENTATION.
       WHEN 2.
         copy_without_execution( ).
       WHEN 3.
-        copy_execute_and_create( ).
+        display( ).
       WHEN 4.
-        import_all( ).
-      WHEN 5.
-        query( ).
-      WHEN 6.
         delete( ).
-      WHEN 7.
-        recovery( ).
+      WHEN 5.
+        display_raw_internal_format( ).
     ENDCASE.
 
   ENDMETHOD.
+
 
   METHOD create_without_execution.
 
@@ -103,6 +112,7 @@ CLASS lcl_app IMPLEMENTATION.
 
   ENDMETHOD.
 
+
   METHOD execute_and_create.
 
     DATA(param_bindings_pbo) = VALUE abap_func_parmbind_tab( ).
@@ -119,12 +129,13 @@ CLASS lcl_app IMPLEMENTATION.
     zcl_fm_test_data=>execute_and_create(
       EXPORTING
         fm_name        = fm_name
-        title          = datadir_entry-title
+        title          = |Copy of { datadir_entry-title }|
         param_bindings = param_bindings_pbo ).
 
     COMMIT WORK.
 
   ENDMETHOD.
+
 
   METHOD copy_without_execution.
 
@@ -132,7 +143,7 @@ CLASS lcl_app IMPLEMENTATION.
 
     zcl_fm_test_data=>load(
       EXPORTING
-        fm_name        = c_test_fm_name
+        fm_name        = fm_name
         test_data_id   = nummer
       IMPORTING
         datadir_entry  = DATA(datadir_entry)
@@ -142,80 +153,17 @@ CLASS lcl_app IMPLEMENTATION.
 
     zcl_fm_test_data=>create_without_execution(
       EXPORTING
-        fm_name        = c_test_fm_name_2
-        title          = datadir_entry-title
-        param_bindings = param_bindings_pbo ).
+        fm_name        = fm_name
+        title          = |Copy of { datadir_entry-title }|
+        param_bindings = param_bindings_pbo
+        lower_case     = attributes-lower_case ).
 
     COMMIT WORK.
 
   ENDMETHOD.
 
-  METHOD copy_execute_and_create.
 
-    DATA: param_bindings_pbo TYPE abap_func_parmbind_tab.
-
-    zcl_fm_test_data=>load(
-      EXPORTING
-        fm_name        = fm_name
-        test_data_id   = nummer
-      IMPORTING
-        datadir_entry  = DATA(datadir_entry)
-        attributes     = DATA(attributes)
-      CHANGING
-        param_bindings_pbo = param_bindings_pbo ).
-
-    zcl_fm_test_data=>execute_and_create(
-      EXPORTING
-        fm_name        = fm_name
-        title          = datadir_entry-title
-        param_bindings = param_bindings_pbo ).
-
-    COMMIT WORK.
-
-  ENDMETHOD.
-
-  METHOD import_all.
-
-    SELECT SINGLE * FROM tfdir WHERE funcname = @fm_name INTO @DATA(fugr).
-    DATA(eufunc) = VALUE eufunc(
-        relid   = 'FL'
-        gruppe  = fugr
-        name    = fm_name
-        nummer  = nummer ).
-
-    TRY.
-        zcl_expimp_table=>import_all(
-          EXPORTING
-            tabname  = 'EUFUNC'
-            area     = 'FL'
-          IMPORTING
-            tab_cpar = DATA(tab_cpar)
-            wa       = eufunc ).
-      CATCH zcx_expimp_table INTO DATA(lx).
-        MESSAGE lx TYPE 'I' DISPLAY LIKE 'E'.
-        RETURN.
-    ENDTRY.
-
-    TRY.
-        CALL TRANSFORMATION id
-            SOURCE
-                data = tab_cpar
-            RESULT
-                XML DATA(xstring)
-            OPTIONS
-                data_refs = 'heap-or-create'
-                technical_types = 'ignore'
-                initial_components = 'suppress'.
-      CATCH cx_transformation_error INTO DATA(lx_transformation_error).
-        MESSAGE lx TYPE 'I' DISPLAY LIKE 'E'.
-        RETURN.
-    ENDTRY.
-
-    cl_demo_output=>display_xml( xstring ).
-
-  ENDMETHOD.
-
-  METHOD query.
+  METHOD display.
 
     DATA: param_bindings_pbo TYPE abap_func_parmbind_tab,
           param_bindings_pai TYPE abap_func_parmbind_tab.
@@ -231,161 +179,209 @@ CLASS lcl_app IMPLEMENTATION.
         param_bindings_pbo = param_bindings_pbo
         param_bindings_pai = param_bindings_pai ).
 
-    TRY.
-        CALL TRANSFORMATION id
-            SOURCE
-                datadir_entry = datadir_entry
-                attributes    = attributes
-                pbo           = param_bindings_pbo
-                pai           = param_bindings_pai
-            RESULT
-                XML DATA(xstring)
-            OPTIONS
-                data_refs = 'heap-or-create'
-                technical_types = 'ignore'
-                initial_components = 'suppress'.
-      CATCH cx_transformation_error INTO DATA(lx_transformation_error).
-    ENDTRY.
+    DATA(xml) = concat_lines_of( sep = || table = VALUE string_table(
+        ( |<root>| )
+        ( |<PBO>| )
+        ( LINES OF VALUE #(
+            FOR <param_binding> IN param_bindings_pbo
+            ( get_xml( data_name = <param_binding>-name data_ref = <param_binding>-value ) ) ) )
+        ( |</PBO>| )
+        ( |<PAI>| )
+        ( LINES OF VALUE #(
+            FOR <param_binding> IN param_bindings_pai
+            ( get_xml( data_name = <param_binding>-name data_ref = <param_binding>-value ) ) ) )
+        ( |</PAI>| )
+        ( |</root>| ) ) ).
 
-    cl_demo_output=>display_xml( xstring ).
+    cl_demo_output=>display_xml( xml ).
 
   ENDMETHOD.
+
 
   METHOD delete.
 
     zcl_fm_test_data=>delete(
-      EXPORTING
-        fm_name = fm_name
+        fm_name      = fm_name
         test_data_id = nummer ).
 
     COMMIT WORK.
 
   ENDMETHOD.
 
-  METHOD recovery.
 
-    TYPES: BEGIN OF ty_arguments,
-             import     TYPE string,
-             bapireturn TYPE bapireturn,
-             export     TYPE string,
-             changing   TYPE string,
-             tables_    TYPE STANDARD TABLE OF sflight WITH EMPTY KEY,
-           END OF ty_arguments.
-    TYPES: BEGIN OF ty_results,
-             import   TYPE string,
-             bapiret1 TYPE bapiret1,
-             export   TYPE string,
-             changing TYPE string,
-             tables_  TYPE STANDARD TABLE OF sflight WITH EMPTY KEY,
-           END OF ty_results.
+  METHOD display_raw_internal_format.
 
-    DATA(source) = VALUE ty_arguments( ).
-    DATA(param_bindings_pbo) = VALUE abap_func_parmbind_tab(
-          ( name = 'IMPORT'     value = REF #( source-import ) )
-          ( name = 'BAPIRETURN' value = REF #( source-bapireturn ) )
-          ( name = 'EXPORT'     value = REF #( source-export ) )
-          ( name = 'CHANGING'   value = REF #( source-changing ) )
-          ( name = 'TABLES_'    value = REF #( source-tables_ ) ) ).
+    DATA: eufunc          TYPE eufunc,
+          lx_expimp_table TYPE REF TO zcx_expimp_table.
 
-    zcl_fm_test_data=>load(
-      EXPORTING
-        fm_name       = c_test_fm_name
-        test_data_id  = nummer
-      IMPORTING
-        datadir_entry = DATA(datadir_entry)
-        attributes    = DATA(attributes)
-      CHANGING
-        param_bindings_pbo = param_bindings_pbo ).
+    SELECT SINGLE pname FROM tfdir WHERE funcname = @fm_name INTO @DATA(pname).
+    DATA(fugr_name) = replace( val = pname sub = 'SAPL' with = `` ).
 
-    DATA(results) = CORRESPONDING ty_results( source ).
-    results-bapiret1 = VALUE #(
-        BASE CORRESPONDING #( source-bapireturn )
-        id     = source-bapireturn-code(2)
-        number = source-bapireturn-code+2 ).
+    eufunc = VALUE eufunc(
+        relid   = 'FL'
+        gruppe  = fugr_name
+        name    = fm_name
+        nummer  = nummer ).
 
-    zcl_fm_test_data=>create_without_execution(
-      EXPORTING
-        fm_name        = c_test_fm_name_2
-        title          = datadir_entry-title
-        param_bindings = VALUE #(
-          ( name = 'IMPORT'     value = REF #( results-import ) )
-          ( name = 'BAPIRET1'   value = REF #( results-bapiret1 ) )
-          ( name = 'EXPORT'     value = REF #( results-export ) )
-          ( name = 'CHANGING'   value = REF #( results-changing ) )
-          ( name = 'TABLES_'    value = REF #( results-tables_ ) ) ) ).
+    TRY.
+        zcl_expimp_table=>import_all(
+          EXPORTING
+            tabname  = 'EUFUNC'
+            area     = 'FL'
+            id_new   = eufunc
+          IMPORTING
+            tab_cpar = DATA(tab_cpar) ).
+      CATCH zcx_expimp_table INTO lx_expimp_table.
+        MESSAGE lx_expimp_table TYPE 'I' DISPLAY LIKE 'E'.
+        RETURN.
+    ENDTRY.
 
-    COMMIT WORK.
+    eufunc = VALUE eufunc(
+        relid   = 'FL'
+        gruppe  = fugr_name
+        name    = fm_name
+        nummer  = '999' ).
+
+    TRY.
+        zcl_expimp_table=>import_all(
+          EXPORTING
+            tabname  = 'EUFUNC'
+            area     = 'FL'
+            id_new   = eufunc
+          IMPORTING
+            tab_cpar = DATA(tab_cpar_999) ).
+      CATCH zcx_expimp_table INTO lx_expimp_table.
+        MESSAGE lx_expimp_table TYPE 'I' DISPLAY LIKE 'E'.
+        RETURN.
+    ENDTRY.
+
+    DATA datadir_entries TYPE zcl_fm_test_data=>ty_datadir.
+    FIELD-SYMBOLS <datadir_entries> TYPE standard table.
+    ASSIGN tab_cpar_999[ name = 'TE_DATADIR' ] TO FIELD-SYMBOL(<cpar_datadir>).
+    ASSIGN <cpar_datadir>-dref->* TO <datadir_entries>.
+    datadir_entries = <datadir_entries>.
+
+    DATA(xml) = concat_lines_of( sep = || table = VALUE string_table(
+        ( |<root>| )
+        ( |<parameters>| )
+        ( LINES OF VALUE #(
+            FOR <cpar> IN tab_cpar
+            ( get_xml( data_name = <cpar>-name data_ref = <cpar>-dref ) ) ) )
+        ( |</parameters>| )
+        ( get_xml( data_name = 'DATADIR_ENTRY' data_ref = REF #( datadir_entries[ dataid = nummer ] ) ) )
+        ( |</root>| ) ) ).
+
+    cl_demo_output=>display_xml( xml ).
 
   ENDMETHOD.
+
+
+  METHOD get_xml.
+
+    ASSIGN data_ref->* TO FIELD-SYMBOL(<value>).
+    TRY.
+        CALL TRANSFORMATION id
+            SOURCE
+                data = <value>
+            RESULT
+                XML DATA(xml_xstring)
+            OPTIONS
+                technical_types = 'ignore'
+                initial_components = 'suppress'.
+      CATCH cx_transformation_error INTO DATA(lx_transformation_error).
+        MESSAGE lx_transformation_error TYPE 'I' DISPLAY LIKE 'E'.
+        RETURN.
+    ENDTRY.
+    DATA lo_doc TYPE REF TO if_ixml_document.
+    CALL FUNCTION 'SDIXML_XML_TO_DOM'
+      EXPORTING
+        xml      = xml_xstring
+      IMPORTING
+        document = lo_doc
+      EXCEPTIONS
+        OTHERS   = 1.
+    DATA(lo_node) = lo_doc->find_from_path_ns( default_uri = '' path =
+           |/"http://www.sap.com/abapxml:abap"|
+        && |/"http://www.sap.com/abapxml:values"|
+        && |/DATA| ).
+    xml = xml && |<element name="{ escape( val = data_name format = cl_abap_format=>e_html_attr ) }">|.
+    DATA(lo_children) = lo_node->get_children( ).
+    DO lo_node->num_children( ) TIMES.
+      DATA(new_xml_string) = VALUE string( ).
+      lo_children->get_item( index = sy-index - 1 )->render( cl_ixml=>create( )->create_stream_factory( )->create_ostream_cstring( new_xml_string ) ).
+      xml = xml && new_xml_string.
+    ENDDO.
+    xml = xml && |</element>|.
+
+  ENDMETHOD.
+
 
 ENDCLASS.
 
 TABLES sscrfields.
 
 PARAMETERS fm_name TYPE tfdir-funcname DEFAULT 'Z_FM_TEST_DATA_TEST'.
-SELECTION-SCREEN PUSHBUTTON /1(20) txt_se37 USER-COMMAND se37.
+SELECTION-SCREEN PUSHBUTTON /46(20) txt_se37 USER-COMMAND se37.
 PARAMETERS nummer TYPE eudatadir-nummer.
 
 SELECTION-SCREEN BEGIN OF LINE.
 PARAMETERS opt0 RADIOBUTTON GROUP rb1 DEFAULT 'X'.
-SELECTION-SCREEN COMMENT (80) txt_opt0.
+SELECTION-SCREEN COMMENT (83) txt_opt0 FOR FIELD opt0.
 SELECTION-SCREEN END OF LINE.
+
 SELECTION-SCREEN BEGIN OF LINE.
 PARAMETERS opt1 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (80) txt_opt1.
+SELECTION-SCREEN COMMENT (83) txt_opt1 FOR FIELD opt1.
 SELECTION-SCREEN END OF LINE.
+
 SELECTION-SCREEN BEGIN OF LINE.
 PARAMETERS opt2 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (80) txt_opt2.
+SELECTION-SCREEN COMMENT (83) txt_opt2 FOR FIELD opt2.
 SELECTION-SCREEN END OF LINE.
+
 SELECTION-SCREEN BEGIN OF LINE.
 PARAMETERS opt3 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (80) txt_opt3.
+SELECTION-SCREEN COMMENT (83) txt_opt3 FOR FIELD opt3.
 SELECTION-SCREEN END OF LINE.
+
 SELECTION-SCREEN BEGIN OF LINE.
 PARAMETERS opt4 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (80) txt_opt4.
+SELECTION-SCREEN COMMENT (83) txt_opt4 FOR FIELD opt4.
 SELECTION-SCREEN END OF LINE.
+
 SELECTION-SCREEN BEGIN OF LINE.
 PARAMETERS opt5 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (80) txt_opt5.
-SELECTION-SCREEN END OF LINE.
-SELECTION-SCREEN BEGIN OF LINE.
-PARAMETERS opt6 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (80) txt_opt6.
-SELECTION-SCREEN END OF LINE.
-SELECTION-SCREEN BEGIN OF LINE.
-PARAMETERS opt7 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (80) txt_opt7.
+SELECTION-SCREEN COMMENT (83) txt_opt5 FOR FIELD opt5.
 SELECTION-SCREEN END OF LINE.
 
 INITIALIZATION.
-  txt_opt0 = 'Create without execution in Z_FM_TEST_DATA_TEST'.
-  txt_opt1 = 'Execute Z_FM_TEST_DATA_TEST and create'.
-  txt_opt2 = 'Copy without execution'.
-  txt_opt3 = 'Copy, execute and create'.
-  txt_opt4 = 'Import all'.
-  txt_opt5 = 'Query'.
-  txt_opt6 = 'Delete'.
-  txt_opt7 = 'Copy from Z_FM_TEST_DATA_TEST to Z_FM_TEST_DATA_TEST_2'.
+  txt_opt0 = 'Create test data in Z_FM_TEST_DATA_TEST'.
+  txt_opt1 = 'Execute given function module test data and create test data including output data'.
+  txt_opt2 = 'Copy given function module test data'.
+  txt_opt3 = 'Display'.
+  txt_opt4 = 'Delete'.
+  txt_opt5 = 'Display raw internal format'.
 
-  txt_se37 = 'Run SE37'(009).
+  txt_se37 = 'Test the FM'(009).
 
 AT SELECTION-SCREEN ON VALUE-REQUEST FOR nummer.
-  zcl_fm_test_data=>f4_help_test_data_id( fm_field_name = 'FM_NAME' test_data_id_field_name = 'NUMMER' ).
+  zcl_fm_test_data=>f4_help_test_data_id(
+      dyname                  = sy-repid
+      dynumb                  = sy-dynnr
+      fm_field_name           = 'FM_NAME'
+      test_data_id_field_name = 'NUMMER' ).
 
 AT SELECTION-SCREEN.
   CASE sy-dynnr.
     WHEN 1000.
       CASE sscrfields-ucomm.
         WHEN 'SE37'.
-          SET PARAMETER ID 'LIB' FIELD lcl_app=>c_test_fm_name.
-          CALL TRANSACTION 'SE37'.
+          SUBMIT rs_testframe_call WITH funcn = fm_name AND RETURN.
       ENDCASE.
   ENDCASE.
 
 START-OF-SELECTION.
-  DATA(options) = VALUE trext_c1( ( opt0 ) ( opt1 ) ( opt2 ) ( opt3 ) ( opt4 ) ( opt5 ) ( opt6 ) ( opt7 ) ).
+  DATA(options) = VALUE trext_c1( ( opt0 ) ( opt1 ) ( opt2 ) ( opt3 ) ( opt4 ) ( opt5 ) ).
   CONCATENATE LINES OF options INTO DATA(options2) RESPECTING BLANKS.
   TRY.
       NEW lcl_app(

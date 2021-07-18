@@ -16,6 +16,19 @@
      <ENTRY>Test of Function Module Test Data</ENTRY>
      <LENGTH>33</LENGTH>
     </item>
+    <item>
+     <ID>S</ID>
+     <KEY>FM_NAME</KEY>
+     <ENTRY>.</ENTRY>
+     <LENGTH>9</LENGTH>
+     <SPLIT>D</SPLIT>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>NUMMER</KEY>
+     <ENTRY>Test data ID</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
    </TPOOL>
   </asx:values>
  </asx:abap>
