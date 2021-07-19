@@ -230,13 +230,25 @@ CLASS zcl_fm_test_data DEFINITION
       RAISING
         zcx_fm_test_data.
 
-    "! Receives PARAM_BINDINGS = table of values of function module parameters, except those in the
+    "! Receives:
+    "! <ul>
+    "!   <li>PARAM_BINDINGS<ul>
+    "!     <li>table of values of function module parameters, except those in the
     "!   FM signature which are of category Exporting. Parameters to which initial values are to be
-    "!   passed don't need to be defined in the table.
+    "!   passed don't need to be defined in the table.</li>
+    "! </ul></li></ul>
     "! Returns:
-    "!   1) NEW_PARAM_BINDINGS = the lines from PARAM_BINDINGS + all missing parameters of the
-    "!      given function module, whatever their categories (Importing, Exporting, Changing, Tables).
-    "!   2) PARAM_BINDINGS_PBO =
+    "! <ul>
+    "!   <li>NEW_PARAM_BINDINGS<ul>
+    "!     <li>Contains the lines from PARAM_BINDINGS + all missing parameters of the
+    "!         given function module, whatever their categories (Call function '...' exporting ... importing ... tables ... changing ...),
+    "!         which are used to call the function module, and these values can change (except those passed via exporting)</li>
+    "!     </ul></li>
+    "!   <li>PARAM_BINDINGS_PBO<ul>
+    "!     <li>Contains the lines from PARAM_BINDINGS + all missing parameters of the
+    "!         given function module, except returned ones in importing category (Call function '...' exporting ... tables ... changing ...),
+    "!         which are used to remember the values before calling the function module</li>
+    "! </ul></li></ul>
     CLASS-METHODS complete_param_bindings
       IMPORTING
         fm_name            TYPE tfdir-funcname
@@ -266,9 +278,10 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
   METHOD complete_param_bindings.
 
     DATA: ref_parameter     TYPE REF TO data,
-          ref_parameter_pbo TYPE REF TO data.
+          ref_parameter_pbo TYPE REF TO data,
+          param_binding_pbo     TYPE abap_func_parmbind.
     FIELD-SYMBOLS:
-      <param_binding> TYPE abap_func_parmbind.
+      <param_binding_pbo> TYPE abap_func_parmbind.
 
     DATA(params_rtts) = get_fm_params_rtts( funcname = fm_name ).
 
@@ -277,34 +290,35 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 
     LOOP AT params_rtts REFERENCE INTO DATA(param_rtts).
 
-      UNASSIGN <param_binding>.
-      IF param_rtts->call_function_kind <> abap_func_importing.
-        " All those values to be passed to the function module
-        " with Call Function '...' exporting ... tables ... changing ...
-        ASSIGN param_bindings[ name = param_rtts->name ] TO <param_binding>.
-        IF sy-subrc = 0 AND <param_binding>-value IS BOUND.
-          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
-                ( <param_binding> ) ).
-        ELSE.
-          CREATE DATA ref_parameter_pbo TYPE HANDLE param_rtts->type.
-          param_bindings_pbo = VALUE #( BASE param_bindings_pbo
-                ( name  = param_rtts->name
-                  value = ref_parameter_pbo ) ).
-        ENDIF.
-      ENDIF.
+      " All those values to be passed to the function module
+      " with Call Function '...' exporting ... tables ... changing ...
+      ASSIGN param_bindings[ name = param_rtts->name ] TO <param_binding_pbo>.
+      IF sy-subrc = 0 AND <param_binding_pbo>-value IS BOUND.
 
-      " All parameters
-      " for Call Function '...' exporting ... importing ... tables ... changing ...
-      CREATE DATA ref_parameter TYPE HANDLE param_rtts->type.
-      IF stepid = 'PAI' AND <param_binding> IS ASSIGNED AND param_rtts->call_function_kind <> abap_func_importing.
-        ASSIGN <param_binding>-value->* TO FIELD-SYMBOL(<input_parameter>).
+        CREATE DATA ref_parameter TYPE HANDLE param_rtts->type.
+        ASSIGN <param_binding_pbo>-value->* TO FIELD-SYMBOL(<input_parameter>).
         ASSIGN ref_parameter->* TO FIELD-SYMBOL(<parameter_value>).
         <parameter_value> = <input_parameter>.
+
+      ELSE.
+
+        CREATE DATA ref_parameter_pbo TYPE HANDLE param_rtts->type.
+        ASSIGN param_binding_pbo TO <param_binding_pbo>.
+        param_binding_pbo = VALUE #(
+              name  = param_rtts->name
+              value = ref_parameter_pbo ).
+
+        CREATE DATA ref_parameter TYPE HANDLE param_rtts->type.
+
       ENDIF.
-      new_param_bindings = VALUE #( BASE new_param_bindings
-          ( name  = param_rtts->name
+
+      INSERT <param_binding_pbo> INTO TABLE param_bindings_pbo.
+
+      INSERT VALUE #(
+            name  = param_rtts->name
             kind  = param_rtts->call_function_kind
-            value = ref_parameter ) ).
+            value = ref_parameter
+          ) INTO TABLE new_param_bindings.
 
     ENDLOOP.
 
@@ -403,16 +417,16 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
 
     time1 = time2 - time1.
 
-    save( fm_name            = fm_name
-          title              = title
-          stepid             = 'PAI'
-          new_param_bindings = new_param_bindings
-          param_bindings_pbo = param_bindings_pbo
-          attributes         = VALUE #(
-                duration        = time1
-                rc              = subrc
-                exception_name  = COND #( WHEN subrc <> 0 THEN exceptions[ value = subrc ]-name )
-                lower_case      = lower_case ) ).
+    test_data_id = save( fm_name            = fm_name
+                         title              = title
+                         stepid             = 'PAI'
+                         new_param_bindings = new_param_bindings
+                         param_bindings_pbo = param_bindings_pbo
+                         attributes         = VALUE #(
+                               duration        = time1
+                               rc              = subrc
+                               exception_name  = COND #( WHEN subrc <> 0 THEN exceptions[ value = subrc ]-name )
+                               lower_case      = lower_case ) ).
 
   ENDMETHOD.
 
@@ -750,24 +764,21 @@ CLASS zcl_fm_test_data IMPLEMENTATION.
         "                            X                          X           X
         ( LINES OF VALUE #(
             FOR <param_binding2> IN param_bindings_pbo
+            WHERE ( kind <> abap_func_importing )
             ( name = '%_I' && <param_binding2>-name dref = <param_binding2>-value ) ) )
         " 2) Values after calling the function modules
         "    call function '...' exporting ... importing ... tables ... changing ...
         "                                          X            X           X
-        ( LINES OF COND #( WHEN stepid = 'PAI' THEN VALUE #(
-            ( LINES OF VALUE #(
-                FOR <param_binding2> IN new_param_bindings
-                WHERE ( kind = abap_func_changing )
-                ( name = '%_O' && <param_binding2>-name dref = <param_binding2>-value )
-                ( name = '%_V' && <param_binding2>-name dref = <param_binding2>-value ) ) )
-            ( LINES OF VALUE #(
-                FOR <param_binding2> IN new_param_bindings
-                WHERE ( kind = abap_func_importing )
-                ( name = '%_V' && <param_binding2>-name dref = <param_binding2>-value ) ) )
-            ( LINES OF VALUE #(
-                FOR <param_binding2> IN new_param_bindings
-                WHERE ( kind = abap_func_tables )
-                ( name = '%_V' && <param_binding2>-name dref = <param_binding2>-value ) ) ) ) ) )
+        ( LINES OF VALUE #(
+            FOR <new_param_binding> IN new_param_bindings
+            ( LINES OF SWITCH #( <new_param_binding>-kind
+                WHEN abap_func_changing THEN VALUE #(
+                    ( name = '%_O' && <new_param_binding>-name dref = <new_param_binding>-value )
+                    ( name = '%_V' && <new_param_binding>-name dref = <new_param_binding>-value ) )
+                WHEN abap_func_importing THEN VALUE #(
+                    ( name = '%_V' && <new_param_binding>-name dref = <new_param_binding>-value ) )
+                WHEN abap_func_tables THEN VALUE #(
+                    ( name = '%_V' && <new_param_binding>-name dref = <new_param_binding>-value ) ) ) ) ) )
         ( name = 'TIME1'      dref = NEW ty_test_attr-duration( attributes-duration ) )
         ( name = 'V_RC'       dref = NEW ty_test_attr-rc( attributes-rc ) )
         ( name = 'VEXCEPTION' dref = NEW ty_test_attr-exception_name( attributes-exception_name ) )

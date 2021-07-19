@@ -16,7 +16,7 @@ FUNCTION Z_FM_TEST_DATA_TEST.
 
   export = 'after call'.
 
-  APPEND INITIAL LINE TO tables_.
+  APPEND VALUE sflight( carrid = 'AZ' connid = '525' ) TO tables_.
 
 
 ENDFUNCTION.

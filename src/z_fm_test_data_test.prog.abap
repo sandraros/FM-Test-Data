@@ -108,7 +108,7 @@ CLASS lcl_app IMPLEMENTATION.
 
     COMMIT WORK.
 
-    MESSAGE |Test data "{ condense( test_data_id ) }" created| TYPE 'I'.
+    MESSAGE |Test data "{ test_data_id }" created| TYPE 'I'.
 
   ENDMETHOD.
 
@@ -126,13 +126,15 @@ CLASS lcl_app IMPLEMENTATION.
       CHANGING
         param_bindings_pbo = param_bindings_pbo ).
 
-    zcl_fm_test_data=>execute_and_create(
+    DATA(test_data_id) = zcl_fm_test_data=>execute_and_create(
       EXPORTING
         fm_name        = fm_name
-        title          = |Copy of { datadir_entry-title }|
+        title          = |Copy of test data "{ nummer }" including FM result|
         param_bindings = param_bindings_pbo ).
 
     COMMIT WORK.
+
+    MESSAGE |Test data "{ test_data_id }" created| TYPE 'I'.
 
   ENDMETHOD.
 
@@ -151,14 +153,16 @@ CLASS lcl_app IMPLEMENTATION.
       CHANGING
         param_bindings_pbo = param_bindings_pbo ).
 
-    zcl_fm_test_data=>create_without_execution(
+    DATA(test_data_id) = zcl_fm_test_data=>create_without_execution(
       EXPORTING
         fm_name        = fm_name
-        title          = |Copy of { datadir_entry-title }|
+        title          = |Copy of test data "{ nummer }"|
         param_bindings = param_bindings_pbo
         lower_case     = attributes-lower_case ).
 
     COMMIT WORK.
+
+    MESSAGE |Test data "{ test_data_id }" created| TYPE 'I'.
 
   ENDMETHOD.
 
@@ -205,6 +209,8 @@ CLASS lcl_app IMPLEMENTATION.
         test_data_id = nummer ).
 
     COMMIT WORK.
+
+    MESSAGE |Test data "{ nummer }" deleted| TYPE 'I'.
 
   ENDMETHOD.
 
@@ -256,7 +262,7 @@ CLASS lcl_app IMPLEMENTATION.
     ENDTRY.
 
     DATA datadir_entries TYPE zcl_fm_test_data=>ty_datadir.
-    FIELD-SYMBOLS <datadir_entries> TYPE standard table.
+    FIELD-SYMBOLS <datadir_entries> TYPE STANDARD TABLE.
     ASSIGN tab_cpar_999[ name = 'TE_DATADIR' ] TO FIELD-SYMBOL(<cpar_datadir>).
     ASSIGN <cpar_datadir>-dref->* TO <datadir_entries>.
     datadir_entries = <datadir_entries>.
@@ -320,49 +326,75 @@ ENDCLASS.
 
 TABLES sscrfields.
 
-PARAMETERS fm_name TYPE tfdir-funcname DEFAULT 'Z_FM_TEST_DATA_TEST'.
-SELECTION-SCREEN PUSHBUTTON /46(20) txt_se37 USER-COMMAND se37.
-PARAMETERS nummer TYPE eudatadir-nummer.
+SELECTION-SCREEN BEGIN OF LINE.
+PARAMETERS block1 RADIOBUTTON GROUP rb2 default 'X' USER-COMMAND ENTER.
+SELECTION-SCREEN COMMENT (79) txt_blk1 FOR FIELD block1.
+SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME.
 
 SELECTION-SCREEN BEGIN OF LINE.
-PARAMETERS opt0 RADIOBUTTON GROUP rb1 DEFAULT 'X'.
-SELECTION-SCREEN COMMENT (83) txt_opt0 FOR FIELD opt0.
+PARAMETERS opt0 RADIOBUTTON GROUP rb3 DEFAULT 'X' MODIF ID b1.
+PARAMETERS opt00 RADIOBUTTON GROUP rb3 MODIF ID hid.
+SELECTION-SCREEN COMMENT (79) txt_opt0 FOR FIELD opt0 MODIF ID b1.
+SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN END OF BLOCK b01.
+
+SELECTION-SCREEN BEGIN OF LINE.
+PARAMETERS block2 RADIOBUTTON GROUP rb2.
+SELECTION-SCREEN COMMENT (79) txt_blk2 FOR FIELD block2.
+SELECTION-SCREEN END OF LINE.
+
+SELECTION-SCREEN BEGIN OF BLOCK b02 WITH FRAME.
+
+SELECTION-SCREEN BEGIN OF LINE.
+SELECTION-SCREEN COMMENT (30) fm_text.
+PARAMETERS fm_name TYPE tfdir-funcname DEFAULT 'Z_FM_TEST_DATA_TEST' MODIF ID b2.
+SELECTION-SCREEN PUSHBUTTON (20) txt_se37 USER-COMMAND se37 MODIF ID b2.
+SELECTION-SCREEN END OF LINE.
+PARAMETERS nummer TYPE eudatadir-nummer MODIF ID b2.
+
+SELECTION-SCREEN BEGIN OF LINE.
+PARAMETERS opt1 RADIOBUTTON GROUP rb1 MODIF ID b2.
+SELECTION-SCREEN COMMENT (79) txt_opt1 FOR FIELD opt1.
 SELECTION-SCREEN END OF LINE.
 
 SELECTION-SCREEN BEGIN OF LINE.
-PARAMETERS opt1 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (83) txt_opt1 FOR FIELD opt1.
+PARAMETERS opt2 RADIOBUTTON GROUP rb1 MODIF ID b2.
+SELECTION-SCREEN COMMENT (79) txt_opt2 FOR FIELD opt2.
 SELECTION-SCREEN END OF LINE.
 
 SELECTION-SCREEN BEGIN OF LINE.
-PARAMETERS opt2 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (83) txt_opt2 FOR FIELD opt2.
+PARAMETERS opt3 RADIOBUTTON GROUP rb1 MODIF ID b2.
+SELECTION-SCREEN COMMENT (79) txt_opt3 FOR FIELD opt3.
 SELECTION-SCREEN END OF LINE.
 
 SELECTION-SCREEN BEGIN OF LINE.
-PARAMETERS opt3 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (83) txt_opt3 FOR FIELD opt3.
+PARAMETERS opt4 RADIOBUTTON GROUP rb1 MODIF ID b2.
+SELECTION-SCREEN COMMENT (79) txt_opt4 FOR FIELD opt4.
 SELECTION-SCREEN END OF LINE.
 
 SELECTION-SCREEN BEGIN OF LINE.
-PARAMETERS opt4 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (83) txt_opt4 FOR FIELD opt4.
+PARAMETERS opt5 RADIOBUTTON GROUP rb1 MODIF ID b2.
+SELECTION-SCREEN COMMENT (79) txt_opt5 FOR FIELD opt5.
 SELECTION-SCREEN END OF LINE.
 
-SELECTION-SCREEN BEGIN OF LINE.
-PARAMETERS opt5 RADIOBUTTON GROUP rb1.
-SELECTION-SCREEN COMMENT (83) txt_opt5 FOR FIELD opt5.
-SELECTION-SCREEN END OF LINE.
+SELECTION-SCREEN END OF BLOCK b02.
 
 INITIALIZATION.
-  txt_opt0 = 'Create test data in Z_FM_TEST_DATA_TEST'.
-  txt_opt1 = 'Execute given function module test data and create test data including output data'.
+  txt_blk1 = 'Operations on function module Z_FM_TEST_DATA_TEST only'.
+  txt_opt0 = 'Create fixed test data'.
+
+  txt_blk2 = 'Operations on any function module and any test data'.
+  fm_text  = 'Function module'.
+  txt_opt1 = 'Execute given test data and create a new one including FM output data'.
   txt_opt2 = 'Copy given function module test data'.
   txt_opt3 = 'Display'.
   txt_opt4 = 'Delete'.
   txt_opt5 = 'Display raw internal format'.
 
-  txt_se37 = 'Test the FM'(009).
+  txt_se37 = 'SE37 Test Tool'(009).
 
 AT SELECTION-SCREEN ON VALUE-REQUEST FOR nummer.
   zcl_fm_test_data=>f4_help_test_data_id(
@@ -370,6 +402,32 @@ AT SELECTION-SCREEN ON VALUE-REQUEST FOR nummer.
       dynumb                  = sy-dynnr
       fm_field_name           = 'FM_NAME'
       test_data_id_field_name = 'NUMMER' ).
+
+AT SELECTION-SCREEN OUTPUT.
+  LOOP AT SCREEN.
+    CASE screen-group1.
+      WHEN 'HID'.
+        screen-active = '0'.
+      WHEN 'B1'.
+        IF block2 = 'X'.
+          screen-input = '0'.
+        ELSE.
+          screen-input = '1'.
+        ENDIF.
+      WHEN 'B2'.
+        IF block1 = 'X'.
+          screen-input = '0'.
+        ELSE.
+          screen-input = '1'.
+        ENDIF.
+    ENDCASE.
+    MODIFY SCREEN.
+  ENDLOOP.
+  IF block1 = 'X'.
+    SET CURSOR FIELD 'OPT0'.
+  ELSE.
+    SET CURSOR FIELD 'FM_NAME'.
+  ENDIF.
 
 AT SELECTION-SCREEN.
   CASE sy-dynnr.
@@ -381,6 +439,11 @@ AT SELECTION-SCREEN.
   ENDCASE.
 
 START-OF-SELECTION.
+  IF block1 = abap_true.
+    CLEAR: opt1, opt2, opt3, opt4, opt5.
+  ELSE.
+    CLEAR: opt0.
+  endif.
   DATA(options) = VALUE trext_c1( ( opt0 ) ( opt1 ) ( opt2 ) ( opt3 ) ( opt4 ) ( opt5 ) ).
   CONCATENATE LINES OF options INTO DATA(options2) RESPECTING BLANKS.
   TRY.
