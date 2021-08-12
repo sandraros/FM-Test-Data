@@ -1,59 +1,21 @@
 # FM-Test-Data
-Utility class `ZCL_FM_TEST_DATA` to read and save Function Module Test Data
+API (class `ZCL_FM_TEST_DATA`) to create Function Module Test Data in transaction code SE37.
 
-Four methods are proposed:
-- `LOAD`
-  - Input:
-    - Function module name
-    - Test ID
-  - Output:
-    - param_bindings_pbo : Values of arguments passed to the function module (call)
-    - param_bindings_pai : Values of parameters returned after the function module call
-  - NB: it's allowed that the function module does not exist anymore, or it has been moved to another function group.
-- `CREATE_WITHOUT_EXECUTION`
-- `EXECUTE_AND_CREATE`
-- `DELETE`
-
-Example program (of type "executable") to duplicate test data in the same function module:
+Example program:
 ```
-REPORT.
-PARAMETERS fm_name TYPE tfdir-funcname DEFAULT 'STRING_REVERSE'.
-PARAMETERS nummer TYPE i DEFAULT 1.
+REPORT zdemo.
 
 START-OF-SELECTION.
-  DATA exc_fm_test_data TYPE REF TO zcx_fm_test_data.
-  DATA(param_bindings) = VALUE abap_func_parmbind_tab( ).
-
-  TRY.
-      zcl_fm_test_data=>load(
-        EXPORTING
-          fm_name       = fm_name
-          test_id       = nummer
-        IMPORTING
-          datadir_entry = DATA(datadir_entry)
-          attributes    = DATA(attributes)
-        CHANGING
-          param_bindings_pbo = param_bindings ).
-    CATCH zcx_fm_test_data INTO exc_fm_test_data.
-      MESSAGE exc_fm_test_data TYPE 'I' DISPLAY LIKE 'E'.
-      RETURN.
-  ENDTRY.
-
-  TRY.
-      zcl_fm_test_data=>create_without_execution(
-          fm_name        = fm_name
-          title          = |Copy of test data { nummer }|
-          param_bindings = param_bindings ).
-      COMMIT WORK.
-
-      MESSAGE 'Test data successfully created' TYPE 'I' DISPLAY LIKE 'S'.
-
-    CATCH zcx_fm_test_data INTO exc_fm_test_data.
-      MESSAGE exc_fm_test_data TYPE 'I' DISPLAY LIKE 'E'.
-      RETURN.
-  ENDTRY.
+  DATA(test_data) = zcl_fm_test_data=&gt;create( fm_name = 'DATE_GET_WEEK' title = 'demo' ).
+  test_data-&gt;set_input_parameters( VALUE #( ( name = 'DATE' value = REF #( sy-datum ) ) ) ).
+  test_data-&gt;save( ).
+  COMMIT WORK.
+  MESSAGE |Test data { condense( test_data-&gt;id ) } created| type 'I'.
 ```
 
 Dependencies:
 - https://github.com/sandraros/Export-Import-Tables.git
 - https://github.com/sandraros/FM-params-RTTS.git
+- https://github.com/sandraros/S-RTTI.git
+
+Installation via [abapGit](https://github.com/abapGit/abapGit)
