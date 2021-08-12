@@ -108,7 +108,7 @@ CLASS lcl_dep IMPLEMENTATION.
         dereference_and_copy( EXPORTING dref = tab_cpar_dir[ name = 'G_NO_SAVE' ]-dref IMPORTING target = context-g_no_save ).
         dereference_and_copy( EXPORTING dref = tab_cpar_dir[ name = 'D102_FNAME' ]-dref IMPORTING target = context-d102_fname ).
 
-      CATCH zcx_expimp_table INTO DATA(lx_expimp_table).
+      CATCH zcx_fm_test_data INTO DATA(lx_fm_test_data).
         " FDESC is initialized by subroutine IN_DESCRIBE_INTERFACE in SAPLSEUJ, for
         " all parameters and exceptions.
         " The list of parameters are initially retrieved via function module FUNCTION_IMPORT_DOKU.
