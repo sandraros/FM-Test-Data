@@ -1,8 +1,8 @@
 *******************************************************************
 *   System-defined Include-files.                                 *
 *******************************************************************
-  INCLUDE LZ_FM_TEST_DATA_TESTTOP.           " Global Declarations
-  INCLUDE LZ_FM_TEST_DATA_TESTUXX.           " Function Modules
+  INCLUDE LZ_FM_TEST_DATA_DEMOTOP.           " Global Declarations
+  INCLUDE LZ_FM_TEST_DATA_DEMOUXX.           " Function Modules
 
 *******************************************************************
 *   User-defined Include-files (if necessary).                    *

@@ -1,0 +1,62 @@
+<?sap.transform simple?>
+<tt:transform xmlns:tt="http://www.sap.com/transformation-templates">
+
+  <tt:root name="ROOT"/>
+
+  <tt:template>
+    <root tt:extensible="on" tt:ref=".ROOT">
+      <tt:cond>
+        <error tt:value-ref="ERROR"/>
+      </tt:cond>
+      <tt:cond>
+        <header tt:ref="HEADER">
+          <fmName tt:value-ref="FM_NAME"/>
+          <fuGrName tt:value-ref="FUGR_NAME"/>
+          <id xml:space="preserve" tt:value-ref="ID"/>
+          <title tt:value-ref="TITLE"/>
+          <author tt:value-ref="AUTHOR"/>
+          <date tt:value-ref="DATE"/>
+          <time tt:value-ref="TIME"/>
+          <lowerCase tt:value-ref="LOWER_CASE"/>
+          <duration tt:value-ref="DURATION"/>
+          <rc tt:value-ref="RC"/>
+          <exception_name tt:value-ref="EXCEPTION_NAME"/>
+          <stepID tt:value-ref="STEPID"/>
+        </header>
+        <valuesBeforeCall>
+          <tt:apply name="values" ref="VALUES_BEFORE_CALL"/>
+        </valuesBeforeCall>
+        <valuesAfterCall>
+          <tt:apply name="values" ref="VALUES_AFTER_CALL"/>
+        </valuesAfterCall>
+        <parameterTypes tt:ref="PARAMETER_TYPES">
+          <input>
+            <tt:apply name="parameterTypes" ref="INPUT"/>
+          </input>
+          <result>
+            <tt:apply name="parameterTypes" ref="RESULT"/>
+          </result>
+        </parameterTypes>
+      </tt:cond>
+    </root>
+  </tt:template>
+
+  <tt:template name="values">
+    <tt:loop>
+      <element>
+        <name tt:value-ref="NAME"/>
+        <value><tt:copy ref="DYNAMICALLY_DEFINED_VALUE"/></value>
+      </element>
+    </tt:loop>
+  </tt:template>
+
+  <tt:template name="parameterTypes">
+    <tt:loop>
+      <element>
+        <name tt:value-ref="NAME"/>
+        <value><tt:copy ref="DYNAMICALLY_DEFINED_VALUE"/></value>
+      </element>
+    </tt:loop>
+  </tt:template>
+
+</tt:transform>

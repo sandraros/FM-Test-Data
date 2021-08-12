@@ -3,8 +3,9 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <PROGDIR>
-    <NAME>Z_FM_TEST_DATA_TEST</NAME>
+    <NAME>Z_FM_TEST_DATA_DEMO</NAME>
     <DBAPL>S</DBAPL>
+    <DBNA>D$</DBNA>
     <SUBC>1</SUBC>
     <FIXPT>X</FIXPT>
     <LDBNAME>D$S</LDBNAME>
@@ -13,8 +14,21 @@
    <TPOOL>
     <item>
      <ID>R</ID>
-     <ENTRY>Test of Function Module Test Data</ENTRY>
-     <LENGTH>33</LENGTH>
+     <ENTRY>Demo of ZCL_FM_TEST_DATA</ENTRY>
+     <LENGTH>24</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>FM_NAME</KEY>
+     <ENTRY>.</ENTRY>
+     <LENGTH>9</LENGTH>
+     <SPLIT>D</SPLIT>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>NUMMER</KEY>
+     <ENTRY>Test data ID</ENTRY>
+     <LENGTH>20</LENGTH>
     </item>
    </TPOOL>
   </asx:values>
