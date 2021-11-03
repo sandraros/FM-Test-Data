@@ -19,3 +19,6 @@ Dependencies:
 - https://github.com/sandraros/S-RTTI.git
 
 Installation via [abapGit](https://github.com/abapGit/abapGit)
+
+More:
+- [Presentation of the API](https://blogs.sap.com/2021/08/12/api-to-read-and-write-function-module-test-data-se37/)
