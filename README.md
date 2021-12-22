@@ -6,11 +6,11 @@ Example program:
 REPORT zdemo.
 
 START-OF-SELECTION.
-  DATA(test_data) = zcl_fm_test_data=&gt;create( fm_name = 'DATE_GET_WEEK' title = 'demo' ).
-  test_data-&gt;set_input_parameters( VALUE #( ( name = 'DATE' value = REF #( sy-datum ) ) ) ).
-  test_data-&gt;save( ).
+  DATA(test_data) = zcl_fm_test_data=>create( fm_name = 'DATE_GET_WEEK' title = 'demo' ).
+  test_data->set_input_parameters( VALUE #( ( name = 'DATE' value = REF #( sy-datum ) ) ) ).
+  test_data->save( ).
   COMMIT WORK.
-  MESSAGE |Test data { condense( test_data-&gt;id ) } created| type 'I'.
+  MESSAGE |Test data { condense( test_data->id ) } created| type 'I'.
 ```
 
 Dependencies:
