@@ -33,7 +33,7 @@ CLASS ZCL_FM_TEST_DATA_APACK IMPLEMENTATION.
               target_package = '' )
             ( group_id       = 'github.com/sandraros'
               artifact_id    = 'FM-params-RTTS'
-              version        = '0.2'
+              version        = '1.0'
               git_url        = 'https://github.com/sandraros/FM-params-RTTS.git'
               target_package = '' )
             ( group_id       = 'github.com/sandraros'
