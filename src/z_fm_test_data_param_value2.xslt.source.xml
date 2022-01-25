@@ -1,0 +1,15 @@
+<xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:sap="http://www.sap.com/sapxsl" version="1.0">
+
+  <xsl:strip-space elements="*"/>
+
+  <xsl:template match="/">
+    <asx:abap xmlns:asx="http://www.sap.com/abapxml">
+      <asx:values>
+        <DATA>
+          <xsl:copy-of select="value/(*|text())"/>
+        </DATA>
+      </asx:values>
+    </asx:abap>
+  </xsl:template>
+
+</xsl:transform>

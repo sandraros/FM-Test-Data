@@ -78,6 +78,7 @@ CLASS zcl_fm_test_data_serialize DEFINITION
 
   PROTECTED SECTION.
   PRIVATE SECTION.
+    CLASS-DATA: params_rtts TYPE zcl_fm_params_rtts=>ty_params_rtts.
 
     CLASS-METHODS get_parameter
       IMPORTING
@@ -109,6 +110,11 @@ CLASS zcl_fm_test_data_serialize DEFINITION
         VALUE(result)   TYPE abap_func_parmbind
       RAISING
         zcx_fm_test_data.
+    CLASS-METHODS use_value_of_actual_type
+      IMPORTING
+        parameter     TYPE abap_func_parmbind
+      RETURNING
+        value(result) TYPE REF TO data.
 
 ENDCLASS.
 
@@ -118,6 +124,12 @@ CLASS zcl_fm_test_data_serialize IMPLEMENTATION.
 
 
   METHOD serialize.
+
+    TRY.
+        params_rtts = zcl_fm_params_rtts=>get( funcname = test_data->fm_name ).
+      CATCH zcx_fm_params_rtts.
+        RAISE EXCEPTION TYPE zcx_fm_test_data EXPORTING text = |Interface error for "{ test_data->fm_name }"|.
+    ENDTRY.
 
     DATA(serializable_test_data) = VALUE ty_test_data(
         header             = VALUE #(
@@ -156,6 +168,8 @@ CLASS zcl_fm_test_data_serialize IMPLEMENTATION.
       CATCH cx_root INTO DATA(error).
         serializable_test_data-error = error->get_text( ).
     ENDTRY.
+
+    test_data_xml = replace( val = test_data_xml sub = ` asx:root="ROOT" xmlns:asx="http://www.sap.com/abapxml"` with = `` occ = 0 ).
 
   ENDMETHOD.
 
@@ -238,9 +252,10 @@ CLASS zcl_fm_test_data_serialize IMPLEMENTATION.
 
     " store the value
     TRY.
-        CALL TRANSFORMATION id
+        CALL TRANSFORMATION z_fm_test_data_param_value2
             SOURCE XML parameter-dynamically_defined_value
             RESULT data = <parameter_value>.
+
       CATCH cx_root INTO error.
         RAISE EXCEPTION TYPE zcx_fm_test_data EXPORTING previous = error.
     ENDTRY.
@@ -279,22 +294,28 @@ CLASS zcl_fm_test_data_serialize IMPLEMENTATION.
 
   METHOD get_parameter.
 
+    DATA: ref_parameter TYPE REF TO data,
+          error         TYPE REF TO cx_root.
     FIELD-SYMBOLS <parameter_value> TYPE any.
 
     result-name = parameter-name.
     result-kind = parameter-kind.
 
-    ASSIGN parameter-value->* TO <parameter_value>.
+    data(ref_parameter_value) = use_value_of_actual_type( parameter ).
+    ASSIGN ref_parameter_value->* TO <parameter_value>.
+
     TRY.
         " to omit the BOM, get RESULT into type XSTRING, but drawback is that it's UTF-8 to be later converted to string.
-        CALL TRANSFORMATION id
-          SOURCE data = <parameter_value>
-          RESULT XML result-dynamically_defined_value
+        CALL TRANSFORMATION z_fm_test_data_param_value
+          SOURCE root = <parameter_value>
+          RESULT XML data(XSTRING)
           OPTIONS initial_components = 'suppress' "data_refs = 'heap-or-create'
                   xml_header    = 'no'.
-      CATCH cx_root INTO DATA(error).
+      CATCH cx_root INTO error.
         RAISE EXCEPTION TYPE zcx_fm_test_data EXPORTING previous = error.
     ENDTRY.
+
+    result-dynamically_defined_value = xstring.
 
   ENDMETHOD.
 
@@ -305,7 +326,9 @@ CLASS zcl_fm_test_data_serialize IMPLEMENTATION.
 
     result-name = parameter-name.
 
-    ASSIGN parameter-value->* TO <parameter_value>.
+    data(ref_parameter_value) = use_value_of_actual_type( parameter ).
+    ASSIGN ref_parameter_value->* TO <parameter_value>.
+
     DATA(srtti_type) = zcl_srtti_typedescr=>create_by_data_object( <parameter_value> ).
     TRY.
         " to omit the BOM, get RESULT into type XSTRING, but drawback is that it's UTF-8 to be later converted to string.
@@ -320,5 +343,29 @@ CLASS zcl_fm_test_data_serialize IMPLEMENTATION.
 
   ENDMETHOD.
 
+
+  METHOD use_value_of_actual_type.
+    DATA: ref_parameter TYPE REF TO data,
+          error         TYPE REF TO cx_root.
+    FIELD-SYMBOLS <parameter_value> TYPE any.
+
+    ASSIGN parameter-value->* TO <parameter_value>.
+
+    TRY.
+        ASSIGN params_rtts[ name = parameter-name ] TO FIELD-SYMBOL(<param_rtts>).
+        IF sy-subrc = 0.
+          CREATE DATA ref_parameter TYPE HANDLE <param_rtts>-type.
+          ASSIGN ref_parameter->* TO FIELD-SYMBOL(<fm_parameter_value>).
+          <fm_parameter_value> = <parameter_value>.
+          ASSIGN <fm_parameter_value> TO <parameter_value>.
+          result = ref_parameter.
+        ELSE.
+          result = parameter-value.
+        ENDIF.
+      CATCH cx_root INTO error.
+        result = parameter-value.
+    ENDTRY.
+
+  ENDMETHOD.
 
 ENDCLASS.
