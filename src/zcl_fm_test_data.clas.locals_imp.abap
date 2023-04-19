@@ -302,7 +302,7 @@ CLASS lcl_saplseuj_redef IMPLEMENTATION.
 
     READ TABLE params_rtts ASSIGNING FIELD-SYMBOL(<param_rtts>)
           WITH KEY name = p_parameter.
-    ASSERT sy-subrc = 0.
+    CHECK sy-subrc = 0.
 
     DATA(struc_info_table_entry) = VALUE nf2ty_struc_info_table_entry( ).
     ASSIGN <param_rtts>-value->* TO FIELD-SYMBOL(<value>).
