@@ -80,10 +80,13 @@ CLASS lcl_app IMPLEMENTATION.
         IF test_data_structure-header-fm_name IN fm_names AND CONV i( test_data_structure-header-id ) IN nummers.
 
           DATA(test_data) = zcl_fm_test_data_serialize=>deserialize( test_data_deserialized_xml ).
-          test_data->save( ).
-          COMMIT WORK.
-
-          WRITE / |Test data created: { test_data->fm_name } #{ condense( test_data->id ) }|.
+          TRY.
+              test_data->save( ).
+              COMMIT WORK.
+              WRITE / |Test data created: { test_data->fm_name } #{ condense( test_data->id ) } - { test_data->title }|.
+            CATCH zcx_fm_test_data INTO DATA(error).
+              WRITE / |{ test_data->fm_name }/Test data #{ condense( test_data_structure-header-id ) }/Title { test_data->title }: error { error->get_text( ) }|.
+          ENDTRY.
 
         ENDIF.
       ENDIF.
